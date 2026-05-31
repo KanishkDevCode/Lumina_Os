@@ -1,0 +1,15 @@
+# Node
+node_modules/
+dist/
+.env
+
+# Python (if you have backend ai scripts)
+__pycache__/
+*.pyc
+ai_env/
+venv/
+.pytest_cache/
+
+# System
+.DS_Store
+Thumbs.db
