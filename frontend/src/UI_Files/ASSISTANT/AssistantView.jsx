@@ -144,7 +144,9 @@ export default function AssistantView() {
         e.preventDefault();
         if (!inputValue.trim()) return;
 
-        const newUserMsg = { id: Date.now(), sender: 'user', text: inputValue, name: 'User' };
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const newUserMsg = { id: Date.now(), sender: 'user', text: inputValue, name: 'User', time: timeStr };
         const currentHistory = [...messages]; 
         
         setMessages(prev => [...prev, newUserMsg]);
@@ -167,11 +169,12 @@ export default function AssistantView() {
             
             const msgId = Date.now() + 1;
             const agentName = messages[0]?.name || 'Lumina AI';
+            const aiTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             setIsTyping(false);
             setStreamingId(msgId);
             setStreamingText('');
-            setMessages(prev => [...prev, { id: msgId, sender: 'ai', text: '', name: agentName }]);
+            setMessages(prev => [...prev, { id: msgId, sender: 'ai', text: '', name: agentName, time: aiTimeStr }]);
 
             // Stream characters in to simulate typing
             let i = 0;
@@ -420,9 +423,13 @@ export default function AssistantView() {
                                 <div style={{ 
                                     fontSize: '10px', color: 'var(--text-muted)', marginBottom: '5px', 
                                     textAlign: msg.sender === 'user' ? 'right' : 'left',
-                                    letterSpacing: '1px', fontWeight: 'bold'
+                                    letterSpacing: '1px', fontWeight: 'bold',
+                                    display: 'flex', gap: '8px',
+                                    flexDirection: msg.sender === 'user' ? 'row-reverse' : 'row',
+                                    alignItems: 'center'
                                 }}>
-                                    {msg.name}
+                                    <span>{msg.name}</span>
+                                    {msg.time && <span style={{ opacity: 0.5, fontWeight: 'normal', letterSpacing: '0px' }}>{msg.time}</span>}
                                 </div>
                                 <div style={{ 
                                     background: msg.sender === 'user' ? 'rgba(255,255,255,0.05)' : `linear-gradient(135deg, rgba(${game.primaryRgb}, 0.15) 0%, rgba(0,0,0,0.5) 100%)`,
@@ -474,7 +481,7 @@ export default function AssistantView() {
                         disabled={isTyping}
                         style={{
                             width: '100%',
-                            padding: '20px 60px 20px 25px',
+                            padding: '20px 110px 20px 25px',
                             background: 'rgba(0,0,0,0.5)',
                             border: `1px solid ${game.primary}50`,
                             borderRadius: '12px',
@@ -488,6 +495,22 @@ export default function AssistantView() {
                         onFocus={(e) => e.target.style.borderColor = game.primary}
                         onBlur={(e) => e.target.style.borderColor = `${game.primary}50`}
                     />
+                    <button
+                        type="button"
+                        onClick={() => setMessages([{ id: 1, sender: 'ai', text: messages[0]?.text || '', name: messages[0]?.name || 'Lumina AI', time: messages[0]?.time }])}
+                        title="Clear chat history"
+                        style={{
+                            position: 'absolute', right: '60px', top: '50%', transform: 'translateY(-50%)',
+                            background: `rgba(${game.primaryRgb}, 0.1)`, border: `1px solid rgba(${game.primaryRgb}, 0.3)`,
+                            color: game.primary, borderRadius: '8px', width: '40px', height: '40px',
+                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            transition: 'all 0.2s ease', fontSize: '16px'
+                        }}
+                        onMouseOver={(e) => { e.currentTarget.style.background = `rgba(${game.primaryRgb}, 0.25)`; e.currentTarget.style.color = '#fff'; }}
+                        onMouseOut={(e) => { e.currentTarget.style.background = `rgba(${game.primaryRgb}, 0.1)`; e.currentTarget.style.color = game.primary; }}
+                    >
+                        ✕
+                    </button>
                     <button 
                         type="submit" 
                         disabled={isTyping || !inputValue.trim()}

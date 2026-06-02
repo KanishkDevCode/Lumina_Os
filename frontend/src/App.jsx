@@ -38,44 +38,305 @@ const AmbientParticles = React.memo(function AmbientParticles({ theme }) {
   )
 })
 
+const BOOT_STATUS_MSGS = [
+  'ESTABLISHING SECURE UPLINK...',
+  'LOADING GAME ARCHIVES...',
+  'SYNCING REALM DATA...',
+  'CALIBRATING NEURAL ENGINE...',
+  'DECRYPTING ASSET VAULT...',
+  'LUMINA OS ONLINE.',
+];
+
 function BootScreen({ onComplete }) {
   const [progress, setProgress] = useState(0);
+  const [phase, setPhase] = useState(0);
+  const [statusMsg, setStatusMsg] = useState(BOOT_STATUS_MSGS[0]);
+  const [isFadingOut, setIsFadingOut] = useState(false);
+  const onCompleteRef = useRef(onComplete);
 
+  const [glyphs] = useState(() => Array.from({ length: 24 }).map((_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    char: ['ᚠ', 'ᚢ', 'ᚦ', 'ᚨ', 'ᚱ', 'ᚲ', '᛫', 'ᛟ', '✦', '◈', '⬡', '⟁'][i % 12],
+    size: Math.random() * 18 + 10,
+    delay: Math.random() * 3,
+    dur: Math.random() * 4 + 3,
+    opacity: Math.random() * 0.25 + 0.05,
+  })));
+
+  // Always keep a fresh reference to onComplete without triggering effects
   useEffect(() => {
-    // Silently pre-cache background assets for maximum fluidity later
-    Object.values(THEMES).forEach(game => {
-      if (game.bgPath) { const img = new Image(); img.src = game.bgPath; }
-      if (game.logoPath) { const img = new Image(); img.src = game.logoPath; }
-    });
-
-    let current = 0;
-    const interval = setInterval(() => {
-      current += Math.random() * 15;
-      if (current >= 100) {
-        current = 100;
-        clearInterval(interval);
-        setTimeout(() => {
-          sessionStorage.setItem('lumina_booted', 'true');
-          onComplete();
-        }, 500);
-      }
-      setProgress(Math.min(current, 100));
-    }, 100);
-    return () => clearInterval(interval);
+    onCompleteRef.current = onComplete;
   }, [onComplete]);
 
+  useEffect(() => {
+    let mounted = true;
+    const minLoadTime = 2500;
+    const startTime = Date.now();
+
+    const assetUrls = [];
+    Object.values(THEMES).forEach(game => {
+      if (game.bgPath) assetUrls.push(game.bgPath);
+      if (game.logoPath) assetUrls.push(game.logoPath);
+    });
+
+    const total = assetUrls.length || 1;
+    let loaded = 0;
+    let currentDisplayProgress = 0;
+    let allDone = false;
+    let isCompleting = false;
+
+    const updateLoop = setInterval(() => {
+      if (!mounted) return;
+
+      const timeElapsed = Date.now() - startTime;
+      let targetProgress;
+
+      if (allDone) {
+        // If assets are loaded, we force the target to 100 based on remaining time
+        // We want it to hit 100% exactly at minLoadTime
+        const completionRatio = Math.min(timeElapsed / minLoadTime, 1);
+        targetProgress = Math.max(currentDisplayProgress, completionRatio * 100);
+      } else {
+        // Normal loading: base on loaded assets + a tiny time-based trickle
+        const realProgress = (loaded / total) * 100;
+        const fakeProgress = (timeElapsed / minLoadTime) * 60; // Up to 60% just from time
+        targetProgress = Math.min(Math.max(realProgress, fakeProgress), 92);
+      }
+
+      // Smoothly move display progress towards target
+      currentDisplayProgress += (targetProgress - currentDisplayProgress) * 0.15 + 0.5;
+      if (currentDisplayProgress > 100) currentDisplayProgress = 100;
+
+      setProgress(currentDisplayProgress);
+
+      const msgIdx = Math.min(Math.floor(currentDisplayProgress / 18), BOOT_STATUS_MSGS.length - 2);
+
+      if (currentDisplayProgress >= 100 && !isCompleting) {
+        isCompleting = true;
+        setStatusMsg(BOOT_STATUS_MSGS[BOOT_STATUS_MSGS.length - 1]);
+        setPhase(5);
+        clearInterval(updateLoop);
+
+        setTimeout(() => {
+          if (!mounted) return;
+          setIsFadingOut(true);
+          setTimeout(() => {
+            if (mounted) {
+              sessionStorage.setItem('lumina_booted', 'true');
+              onCompleteRef.current();
+            }
+          }, 800);
+        }, 600);
+      } else if (!isCompleting) {
+        setStatusMsg(BOOT_STATUS_MSGS[msgIdx]);
+        setPhase(msgIdx);
+      }
+    }, 30); // Fast 30ms interval for smooth number counting
+
+    const checkDone = () => {
+      loaded++;
+      if (loaded >= total) allDone = true;
+    };
+
+    if (assetUrls.length === 0) {
+      allDone = true;
+    } else {
+      assetUrls.forEach(url => {
+        const img = new Image();
+        img.onload = checkDone;
+        img.onerror = checkDone;
+        img.src = url;
+      });
+    }
+
+    return () => {
+      mounted = false;
+      clearInterval(updateLoop);
+    };
+  }, []);
+
+  const arcRadius = 54;
+  const arcCircumference = 2 * Math.PI * arcRadius;
+  const arcOffset = arcCircumference - (progress / 100) * arcCircumference;
+
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#02050a', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#00d2ff', fontFamily: 'monospace' }}>
-      <div style={{ fontSize: '24px', letterSpacing: '8px', marginBottom: '20px', animation: 'pulseLogo 2s infinite alternate', fontWeight: '900', textShadow: '0 0 20px #00d2ff' }}>
+    <div style={{
+      position: 'fixed', inset: 0, background: '#02050a', zIndex: 9999,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      fontFamily: 'monospace', overflow: 'hidden',
+      transition: 'opacity 0.8s ease-in-out, transform 0.8s cubic-bezier(0.8, 0, 0.2, 1)',
+      opacity: isFadingOut ? 0 : 1,
+      transform: isFadingOut ? 'scale(1.1)' : 'scale(1)',
+      pointerEvents: isFadingOut ? 'none' : 'auto',
+    }}>
+
+      {/* SVG Hex Grid Background */}
+      <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.04 }} xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="hexgrid" x="0" y="0" width="60" height="52" patternUnits="userSpaceOnUse">
+            <polygon points="30,2 58,17 58,47 30,62 2,47 2,17" fill="none" className="omni-stroke" strokeWidth="1" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#hexgrid)" />
+      </svg>
+
+      {/* Scan lines - neutral white */}
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.015) 2px, rgba(255,255,255,0.015) 4px)', pointerEvents: 'none' }} />
+
+      {/* Floating glyphs */}
+      {glyphs.map(g => (
+        <div key={g.id} className="omni-glyph" style={{
+          position: 'absolute', left: `${g.x}%`, top: `${g.y}%`,
+          fontSize: `${g.size}px`, opacity: g.opacity,
+          animation: `glyphPulse ${g.dur}s ${g.delay}s ease-in-out infinite alternate, omniColor 4s infinite alternate ease-in-out`,
+          userSelect: 'none', pointerEvents: 'none',
+        }}>{g.char}</div>
+      ))}
+
+      {/* Corner brackets */}
+      {[{ top: 24, left: 24, t: 'top', l: 'left' }, { top: 24, right: 24, t: 'top', r: 'right' }, { bottom: 24, left: 24, b: 'bottom', l: 'left' }, { bottom: 24, right: 24, b: 'bottom', r: 'right' }].map((c, i) => (
+        <div key={i} className={`omni-border-${c.t ? 'top' : 'bottom'} omni-border-${c.l ? 'left' : 'right'}`} style={{
+          position: 'absolute', ...c,
+          width: 40, height: 40,
+        }} />
+      ))}
+
+      {/* Circular arc progress ring */}
+      <div style={{ position: 'relative', width: 140, height: 140, marginBottom: 32 }}>
+        <svg width="140" height="140" style={{ transform: 'rotate(-90deg)' }}>
+          <circle cx="70" cy="70" r={arcRadius} fill="none" className="omni-stroke-dim" strokeWidth="3" />
+          <circle cx="70" cy="70" r={arcRadius} fill="none" className="omni-stroke"
+            strokeWidth="3" strokeLinecap="round"
+            strokeDasharray={arcCircumference}
+            strokeDashoffset={arcOffset}
+            style={{ transition: 'stroke-dashoffset 0.3s ease' }}
+          />
+        </svg>
+        {/* Center content inside ring */}
+        <div style={{
+          position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center'
+        }}>
+          <div className="omni-text" style={{ fontSize: 28, fontWeight: 900, lineHeight: 1 }}>
+            {Math.floor(progress)}
+          </div>
+          <div className="omni-text-dim" style={{ fontSize: 10, letterSpacing: 2 }}>%</div>
+        </div>
+      </div>
+
+      {/* Title */}
+      <div className="omni-title" style={{ fontSize: 26, fontWeight: 900, letterSpacing: 10, marginBottom: 8, animation: 'omniTitlePulse 4s infinite alternate ease-in-out' }}>
         LUMINA_OS
       </div>
-      <div style={{ width: '300px', height: '2px', background: 'rgba(0, 210, 255, 0.2)', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: `${progress}%`, background: '#00d2ff', transition: 'width 0.1s linear', boxShadow: '0 0 10px #00d2ff' }} />
+      <div className="omni-text-dim" style={{ fontSize: 10, letterSpacing: 4, marginBottom: 32 }}>
+        AGENTIC GAMING PLATFORM
       </div>
-      <div style={{ marginTop: '15px', fontSize: '10px', letterSpacing: '2px', color: 'rgba(255,255,255,0.5)' }}>
-        INITIALIZING SUBSYSTEMS... {Math.floor(progress)}%
+
+      {/* Status lines */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: 340, padding: '0 10px' }}>
+        {BOOT_STATUS_MSGS.slice(0, Math.min(phase + 1, BOOT_STATUS_MSGS.length - 1)).map((msg, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, animation: 'bootLineIn 0.4s ease-out both' }}>
+            <span style={{ color: '#00ff88', fontSize: 10 }}>✓</span>
+            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', letterSpacing: 1 }}>{msg}</span>
+          </div>
+        ))}
+        {progress < 100 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span className="omni-color" style={{ fontSize: 10, animation: 'bootCursor 0.8s step-end infinite, omniColor 4s infinite alternate ease-in-out' }}>▶</span>
+            <span className="omni-text-dim" style={{ fontSize: 10, letterSpacing: 1 }}>{statusMsg}</span>
+          </div>
+        )}
       </div>
-      <style>{`@keyframes pulseLogo { 0% { opacity: 0.6; } 100% { opacity: 1; } }`}</style>
+
+      <style>{`
+        /* OMNI THEME COLORS: GOW(#00d2ff), AC(#ffffff), HL(#2a9d8f), RDR(#d62828), HITMAN(#8b939c) */
+        .omni-stroke { animation: omniStroke 4s infinite alternate ease-in-out; }
+        .omni-stroke-dim { animation: omniStrokeDim 4s infinite alternate ease-in-out; }
+        .omni-text { animation: omniText 4s infinite alternate ease-in-out; }
+        .omni-text-dim { animation: omniTextDim 4s infinite alternate ease-in-out; }
+        .omni-color { animation: omniColor 4s infinite alternate ease-in-out; }
+        .omni-border-top { animation: omniBorderTop 4s infinite alternate ease-in-out; }
+        .omni-border-bottom { animation: omniBorderBottom 4s infinite alternate ease-in-out; }
+        .omni-border-left { animation: omniBorderLeft 4s infinite alternate ease-in-out; }
+        .omni-border-right { animation: omniBorderRight 4s infinite alternate ease-in-out; }
+
+        @keyframes omniStroke {
+          0% { stroke: #00d2ff; filter: drop-shadow(0 0 8px #00d2ff); }
+          25% { stroke: #ffffff; filter: drop-shadow(0 0 8px #ffffff); }
+          50% { stroke: #2a9d8f; filter: drop-shadow(0 0 8px #2a9d8f); }
+          75% { stroke: #d62828; filter: drop-shadow(0 0 8px #d62828); }
+          100% { stroke: #8b939c; filter: drop-shadow(0 0 8px #8b939c); }
+        }
+        @keyframes omniStrokeDim {
+          0% { stroke: rgba(0,210,255,0.1); }
+          25% { stroke: rgba(255,255,255,0.1); }
+          50% { stroke: rgba(42,157,143,0.1); }
+          75% { stroke: rgba(214,40,40,0.1); }
+          100% { stroke: rgba(139,147,156,0.1); }
+        }
+        @keyframes omniText {
+          0% { color: #00d2ff; text-shadow: 0 0 20px #00d2ff; }
+          25% { color: #ffffff; text-shadow: 0 0 20px #ffffff; }
+          50% { color: #2a9d8f; text-shadow: 0 0 20px #2a9d8f; }
+          75% { color: #d62828; text-shadow: 0 0 20px #d62828; }
+          100% { color: #8b939c; text-shadow: 0 0 20px #8b939c; }
+        }
+        @keyframes omniTextDim {
+          0% { color: rgba(0,210,255,0.6); }
+          25% { color: rgba(255,255,255,0.6); }
+          50% { color: rgba(42,157,143,0.6); }
+          75% { color: rgba(214,40,40,0.6); }
+          100% { color: rgba(139,147,156,0.6); }
+        }
+        @keyframes omniColor {
+          0% { color: #00d2ff; filter: drop-shadow(0 0 6px #00d2ff); }
+          25% { color: #ffffff; filter: drop-shadow(0 0 6px #ffffff); }
+          50% { color: #2a9d8f; filter: drop-shadow(0 0 6px #2a9d8f); }
+          75% { color: #d62828; filter: drop-shadow(0 0 6px #d62828); }
+          100% { color: #8b939c; filter: drop-shadow(0 0 6px #8b939c); }
+        }
+        @keyframes omniTitlePulse {
+          0% { color: #00d2ff; text-shadow: 0 0 30px #00d2ff, 0 0 60px rgba(0,210,255,0.3); transform: scale(1); }
+          25% { color: #ffffff; text-shadow: 0 0 30px #ffffff, 0 0 60px rgba(255,255,255,0.3); transform: scale(1.02); }
+          50% { color: #2a9d8f; text-shadow: 0 0 30px #2a9d8f, 0 0 60px rgba(42,157,143,0.3); transform: scale(1.01); }
+          75% { color: #d62828; text-shadow: 0 0 30px #d62828, 0 0 60px rgba(214,40,40,0.3); transform: scale(1.03); }
+          100% { color: #8b939c; text-shadow: 0 0 30px #8b939c, 0 0 60px rgba(139,147,156,0.3); transform: scale(1); }
+        }
+        @keyframes omniBorderTop {
+          0% { border-top: 2px solid rgba(0,210,255,0.4); }
+          25% { border-top: 2px solid rgba(255,255,255,0.4); }
+          50% { border-top: 2px solid rgba(42,157,143,0.4); }
+          75% { border-top: 2px solid rgba(214,40,40,0.4); }
+          100% { border-top: 2px solid rgba(139,147,156,0.4); }
+        }
+        @keyframes omniBorderBottom {
+          0% { border-bottom: 2px solid rgba(0,210,255,0.4); }
+          25% { border-bottom: 2px solid rgba(255,255,255,0.4); }
+          50% { border-bottom: 2px solid rgba(42,157,143,0.4); }
+          75% { border-bottom: 2px solid rgba(214,40,40,0.4); }
+          100% { border-bottom: 2px solid rgba(139,147,156,0.4); }
+        }
+        @keyframes omniBorderLeft {
+          0% { border-left: 2px solid rgba(0,210,255,0.4); }
+          25% { border-left: 2px solid rgba(255,255,255,0.4); }
+          50% { border-left: 2px solid rgba(42,157,143,0.4); }
+          75% { border-left: 2px solid rgba(214,40,40,0.4); }
+          100% { border-left: 2px solid rgba(139,147,156,0.4); }
+        }
+        @keyframes omniBorderRight {
+          0% { border-right: 2px solid rgba(0,210,255,0.4); }
+          25% { border-right: 2px solid rgba(255,255,255,0.4); }
+          50% { border-right: 2px solid rgba(42,157,143,0.4); }
+          75% { border-right: 2px solid rgba(214,40,40,0.4); }
+          100% { border-right: 2px solid rgba(139,147,156,0.4); }
+        }
+
+        @keyframes glyphPulse { from { opacity: 0.03; transform: scale(0.9); } to { opacity: 0.2; transform: scale(1.1); } }
+        @keyframes bootLineIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes bootCursor { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+      `}</style>
     </div>
   );
 }
@@ -212,7 +473,8 @@ export default function App() {
         <style>{`
           :root { --text-main: #ffffff; --text-muted: #8b99a6; --border-light: rgba(255, 255, 255, 0.08); --font-sans: 'Inter', system-ui, sans-serif; }
           * { box-sizing: border-box; margin: 0; padding: 0; }
-          .lumina-os { width: 100vw; height: 100vh; background: radial-gradient(circle at 50% -10%, var(--bg-glow) 0%, var(--bg-core) 60%); color: var(--text-main); font-family: var(--font-sans); display: flex; flex-direction: column; overflow: hidden; transition: background 0.8s ease; }
+          .lumina-os { width: 100vw; height: 100vh; background: radial-gradient(circle at 50% -10%, var(--bg-glow) 0%, var(--bg-core) 60%); color: var(--text-main); font-family: var(--font-sans); display: flex; flex-direction: column; overflow: hidden; transition: background 0.8s ease; animation: appEnter 1.2s cubic-bezier(0.1, 0.9, 0.2, 1) both; }
+          @keyframes appEnter { from { opacity: 0; transform: scale(1.03); } to { opacity: 1; transform: scale(1); } }
           .particles-layer { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
           .particle { position: absolute; bottom: -20px; border-radius: 50%; animation: floatUp linear infinite; filter: blur(2px); }
           @keyframes floatUp { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: var(--opacity); } 80% { opacity: var(--opacity); } 100% { transform: translateY(-100vh); opacity: 0; } }

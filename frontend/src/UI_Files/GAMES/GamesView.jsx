@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useStore } from '../../store/useStore'
 import Icons from '../shared/Icons'
@@ -27,6 +27,18 @@ export default function GamesView({ setCurrentRoute }) {
 
   const theme = { ...THEMES[activeGameId], ...gamesData[activeGameId] }
   const isAdmin = !!user
+
+  // --- GUARANTEED SYNC: Local Text + Cloud Images ---
+  if (THEMES[activeGameId]?.lore) {
+    theme.lore = THEMES[activeGameId].lore.map((loc, i) => {
+      const cld = gamesData[activeGameId]?.lore?.[i] || {};
+      return { 
+        ...cld, 
+        name: loc.name, 
+        desc: loc.desc // Force local text always, keep cloud image
+      };
+    });
+  }
 
   // --- YOUTUBE HELPER ---
   const getYoutubeId = (url) => {
@@ -518,14 +530,14 @@ export default function GamesView({ setCurrentRoute }) {
                   </div>
                   <div style={{ flex: 2.5, display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     <h3 className="panel-title">PC SYSTEM REQUIREMENTS</h3>
-                    <div 
-                      className="media-placeholder large" 
-                      style={{ 
+                    <div
+                      className="media-placeholder large"
+                      style={{
                         flex: 1,
-                        backgroundImage: theme.pcSpecsImg ? `url(${theme.pcSpecsImg})` : 'none', 
-                        backgroundSize: 'contain', backgroundRepeat: 'no-repeat', backgroundPosition: 'center', 
-                        cursor: theme.pcSpecsImg ? 'pointer' : 'default' 
-                      }} 
+                        backgroundImage: theme.pcSpecsImg ? `url(${theme.pcSpecsImg})` : 'none',
+                        backgroundSize: 'contain', backgroundRepeat: 'no-repeat', backgroundPosition: 'center',
+                        cursor: theme.pcSpecsImg ? 'pointer' : 'default'
+                      }}
                       onClick={() => { if (theme.pcSpecsImg) setActiveGalleryImg(theme.pcSpecsImg) }}
                     >
                       {!theme.pcSpecsImg && <span style={{ opacity: 0.5 }}>PC SPECS GRAPHIC</span>}
@@ -616,9 +628,25 @@ export default function GamesView({ setCurrentRoute }) {
             {activeTab === '05. WORLD & LORE' && (
               <div className="grid-col tab-span tab-fade">
                 <h3 className="panel-title">WORLD & LORE</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '20px' }}>
+                <div className="custom-scrollbar" style={{ display: 'flex', overflowX: 'auto', gap: '20px', paddingBottom: '15px' }}>
+                  <style>{`
+                    .custom-scrollbar::-webkit-scrollbar {
+                      height: 6px;
+                    }
+                    .custom-scrollbar::-webkit-scrollbar-track {
+                      background: rgba(0, 0, 0, 0.3);
+                      border-radius: 10px;
+                    }
+                    .custom-scrollbar::-webkit-scrollbar-thumb {
+                      background: var(--primary);
+                      border-radius: 10px;
+                    }
+                    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                      background: var(--text-h, #fff);
+                    }
+                  `}</style>
                   {(theme.lore || []).map((realm, i) => (
-                    <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '280px', flex: '0 0 auto' }}>
 
                       <div
                         className="media-placeholder"
@@ -641,7 +669,7 @@ export default function GamesView({ setCurrentRoute }) {
                       <textarea
                         value={realm.desc}
                         onChange={(e) => { const newLore = [...theme.lore]; newLore[i].desc = e.target.value; updateGameField(activeGameId, 'lore', newLore); }}
-                        disabled={!isAdmin} style={{ color: 'var(--text-muted)', background: 'transparent', padding: '0', fontSize: '10px', height: '80px', border: 'none' }}
+                        disabled={!isAdmin} style={{ color: 'var(--text-muted)', background: 'transparent', padding: '0', fontSize: '10px', flex: 1, minHeight: '270px', border: 'none', resize: 'none' }}
                       />
                     </div>
                   ))}
@@ -683,7 +711,9 @@ export default function GamesView({ setCurrentRoute }) {
               <div className="grid-col tab-span tab-fade">
                 <h3 className="panel-title">SKILL TREES</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '30px' }}>
-                  {['LEVIATHAN AXE', 'BLADES OF CHAOS', 'DRAUPNIR SPEAR'].map((treeName, i) => (
+                  {(theme.weapons?.slice(0, 3) || ['SKILL TREE I', 'SKILL TREE II', 'SKILL TREE III']).map((wepOrName, i) => {
+                    const treeName = typeof wepOrName === 'object' ? wepOrName.name : wepOrName;
+                    return (
                     <div key={treeName} style={{ background: 'rgba(0,0,0,0.2)', padding: '30px', borderRadius: '8px', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                       <div style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '20px' }}>{treeName}</div>
 
@@ -711,7 +741,7 @@ export default function GamesView({ setCurrentRoute }) {
                         {theme.abilityTrees?.[i] && renderRemoveBtn('abilityTrees', i)}
                       </div>
                     </div>
-                  ))}
+                  )})}
                 </div>
               </div>
             )}
@@ -820,7 +850,7 @@ export default function GamesView({ setCurrentRoute }) {
                     {publishData.roadmap.map((rm, i) => (
                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flex: 1 }}>
-                          <span style={{ fontSize: '10px', color: 'var(--text-muted)', border: '1px solid var(--border-light)', padding: '2px 5px', borderRadius: '4px' }}>1</span>
+                          <span style={{ fontSize: '10px', color: 'var(--text-muted)', border: '1px solid var(--border-light)', padding: '2px 5px', borderRadius: '4px', minWidth: '18px', textAlign: 'center' }}>{i + 1}</span>
                           <input disabled={!isAdmin} value={rm.milestone} onChange={(e) => { const newR = [...publishData.roadmap]; newR[i].milestone = e.target.value; handlePublishChange('roadmap', newR); }} style={{ ...adminInputStyle, fontSize: '11px', color: 'white', fontWeight: 'bold' }} />
                         </div>
                         <input disabled={!isAdmin} value={rm.date} onChange={(e) => { const newR = [...publishData.roadmap]; newR[i].date = e.target.value; handlePublishChange('roadmap', newR); }} style={{ ...adminInputStyle, fontSize: '10px', color: 'var(--text-muted)', width: '45px', textAlign: 'right' }} />
