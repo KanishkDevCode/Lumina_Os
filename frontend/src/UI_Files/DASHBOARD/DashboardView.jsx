@@ -11,8 +11,8 @@ const DASHBOARD_GAMES = [
     {
         id: 'GOW',
         title: 'GOD OF WAR',
-        logoPath: '/Dashboard/GOW_LOGO.png',
-        bgPath: '/Dashboard/GOW_BG.png',
+        logoPath: '/Dashboard_Assests/GOW_LOGO.png',
+        bgPath: '/Dashboard_Assests/GOW_BG.png',
         modelPath: '/models/axe.glb',
         themeColor: '#00d2ff', // Cyan
         modelScale: 5,
@@ -51,8 +51,8 @@ const DASHBOARD_GAMES = [
     {
         id: 'AC',
         title: "ASSASSIN'S CREED",
-        logoPath: '/Dashboard/AC_LOGO.png',
-        bgPath: '/Dashboard/AC_BG.png',
+        logoPath: '/Dashboard_Assests/AC_LOGO.png',
+        bgPath: '/Dashboard_Assests/AC_BG.png',
         modelPath: '/models/hidden_blade.glb',
         themeColor: '#ffffff', // White
         modelScale: 2,
@@ -91,8 +91,8 @@ const DASHBOARD_GAMES = [
     {
         id: 'HL',
         title: "HOGWARTS LEGACY",
-        logoPath: '/Dashboard/HL_LOGO.png',
-        bgPath: '/Dashboard/HL_BG.png',
+        logoPath: '/Dashboard_Assests/HL_LOGO.png',
+        bgPath: '/Dashboard_Assests/HL_BG.png',
         modelPath: '/models/wand.glb',
         themeColor: '#2a9d8f', // Emerald Green
         modelScale: 2.3,
@@ -134,8 +134,8 @@ const DASHBOARD_GAMES = [
     {
         id: 'RDR',
         title: "RED DEAD REDEMPTION",
-        logoPath: '/Dashboard/RDR_LOGO.png',
-        bgPath: '/Dashboard/RDR_BG.png',
+        logoPath: '/Dashboard_Assests/RDR_LOGO.png',
+        bgPath: '/Dashboard_Assests/RDR_BG.png',
         modelPath: '/models/revolver.glb',
         themeColor: '#d62828', // Crimson Red
         modelScale: 29,
@@ -177,8 +177,8 @@ const DASHBOARD_GAMES = [
     {
         id: 'HITMAN',
         title: "HITMAN",
-        logoPath: '/Dashboard/HITMAN_LOGO.png',
-        bgPath: '/Dashboard/HITMAN_BG.png',
+        logoPath: '/Dashboard_Assests/HITMAN_LOGO.png',
+        bgPath: '/Dashboard_Assests/HITMAN_BG.png',
         modelPath: '/models/pistol.glb',
         themeColor: '#8b939c', // Shadow Silver
         modelScale: 0.35,

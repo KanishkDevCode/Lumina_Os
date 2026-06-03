@@ -7,7 +7,7 @@ import Icons from '../shared/Icons';
 const GAME_CINEMA = {
   GOW: {
     splashIcon: '🪓',
-    splashLogo: null, // Replace with URL later, e.g. '/images/gow-logo.png'
+    splashLogo: './Assistant_Assests/God_of_War.png', // Replace with URL later, e.g. '/images/gow-logo.png'
     splashTitle: 'REALM UPLINK ESTABLISHED',
     splashSub: 'MIMIR — KEEPER OF KNOWLEDGE',
     splashAnim: 'gowSplash',
@@ -18,7 +18,7 @@ const GAME_CINEMA = {
   },
   AC: {
     splashIcon: '🦅',
-    splashLogo: null,
+    splashLogo: './Assistant_Assests/Assassins_Creed.png',
     splashTitle: 'ANIMUS SYNCHRONISED',
     splashSub: 'BROTHERHOOD INTELLIGENCE ACTIVE',
     splashAnim: 'acSplash',
@@ -29,7 +29,7 @@ const GAME_CINEMA = {
   },
   HL: {
     splashIcon: '⚡',
-    splashLogo: null,
+    splashLogo: './Assistant_Assests/Hogwarts_legacy.png',
     splashTitle: 'WIZARDING UPLINK',
     splashSub: 'HOGWARTS SPELLBOOK LOADED',
     splashAnim: 'hlSplash',
@@ -40,7 +40,7 @@ const GAME_CINEMA = {
   },
   RDR: {
     splashIcon: '🤠',
-    splashLogo: null,
+    splashLogo: './Assistant_Assests/Read_Dead_Redemption.png',
     splashTitle: 'FRONTIER DISPATCH',
     splashSub: 'OUTLAW INTELLIGENCE ONLINE',
     splashAnim: 'rdrSplash',
@@ -51,7 +51,7 @@ const GAME_CINEMA = {
   },
   HITMAN: {
     splashIcon: '🎯',
-    splashLogo: null,
+    splashLogo: './Assistant_Assests/Hitman.png',
     splashTitle: 'ICA SECURE CHANNEL',
     splashSub: 'HANDLER: DIANA BURNWOOD',
     splashAnim: 'hitmanSplash',
