@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="frontend/src/assets/readme_banner.png" alt="Banner" width="100%">
+  <img src="https://raw.githubusercontent.com/KanishkDevCode/Lumina_Os/main/frontend/src/assets/readme_banner.png" alt="Banner" width="100%">
 
 # 🌌 LUMINA OS
 
