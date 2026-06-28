@@ -57,6 +57,11 @@ UILayer --> FinalOutput["Immersive OS Interface"]:::final
 
 ```text
 Lumina_Os/
+├── backend/
+│   ├── config/                  # Firebase and LLM API configurations
+│   ├── routes/                  # API endpoints for AI assistant & game data
+│   ├── server.js                # Node/Express server entry point
+│   └── package.json             # Backend dependencies & scripts
 ├── frontend/
 │   ├── public/
 │   │   ├── assets/              # UI textures, icons, and SVG hex grids
