@@ -9,13 +9,13 @@ import { getAnalytics } from "firebase/analytics";
 
 // Firebase Config
 const firebaseConfig = {
-  apiKey: "AIzaSyB66caBKeaG1FDoNxM9KaU8E-Gb-OXHN70",
-  authDomain: "lumina-os-bb8c5.firebaseapp.com",
-  projectId: "lumina-os-bb8c5",
-  storageBucket: "lumina-os-bb8c5.firebasestorage.app",
-  messagingSenderId: "623832831503",
-  appId: "1:623832831503:web:4cc9c8d6f81179baf1f57a",
-  measurementId: "G-JZTZZ84JZ5"
+  apiKey: "AIzaSyCm1K7V6JSeYYsghcbz70BG1OXLr9MkM_s",
+  authDomain: "lumina-os-bc923.firebaseapp.com",
+  projectId: "lumina-os-bc923",
+  storageBucket: "lumina-os-bc923.firebasestorage.app",
+  messagingSenderId: "266965521255",
+  appId: "1:266965521255:web:50b20ffb4e2808fb3515c2",
+  measurementId: "G-4G08Q8FZHG"
 };
 
 // Initialize Firebase

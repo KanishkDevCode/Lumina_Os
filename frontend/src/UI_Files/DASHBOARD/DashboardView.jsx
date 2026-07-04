@@ -554,9 +554,14 @@ function GlobalAtmosphere({ game }) {
             {/* Specific RDR2 Distant Train Smoke (Parametric Multi-Point System) */}
             {game.id === 'RDR' && (
                 <Clouds>
-                    <group position={[7.5, -7.4, -20]} rotation={[0, 0, -Math.PI / 16]} scale={[0.6, 0.6, 0.6]}>
+                    {/* TWEAK THESE NUMBERS TO MOVE THE ENTIRE SMOKE SYSTEM:
+                        startX: Move left (lower number) or right (higher number)
+                        startY: Move down (lower number) or up (higher number)
+                        rotation: Angle of the entire cloud (default is slightly angled up) 
+                    */}
+                    <CoverAlignedSmoke startX={6.3} startY={-6.3} rotation={[0, 0, -Math.PI / 16]}>
                         <MovingRDRSmoke />
-                    </group>
+                    </CoverAlignedSmoke>
                 </Clouds>
             )}
 
@@ -764,6 +769,49 @@ function AnimatedModelViewer({ game }) {
     );
 }
 
+// ==========================================
+// RDR2 Train Smoke Aligner
+// Keeps 3D smoke locked to the 2D CSS 'cover' background image across all aspect ratios
+// ==========================================
+function CoverAlignedSmoke({ children, startX = 7.5, startY = -7.4, rotation = [0, 0, -Math.PI / 16] }) {
+    const { viewport, camera } = useThree();
+
+    // Original image aspect ratio is exactly 16:9
+    const imgAspect = 16 / 9;
+    const screenAspect = viewport.width / viewport.height;
+
+    // The relative position of the train chimney in the original 16:9 image
+    // Derived from the original perfect 16:9 coordinates
+    const normX = startX / 45.6;
+    const normY = startY / 25.67;
+
+    // Calculate viewport dimensions at z = -20
+    const depth = -20;
+    const distance = camera.position.z - depth; // 11 - (-20) = 31
+    const vh = 2 * distance * Math.tan((camera.fov * Math.PI) / 360);
+    const vw = vh * screenAspect;
+
+    // Apply CSS 'cover' scaling logic to the 3D plane dimensions
+    let scaleW, scaleH;
+    if (screenAspect > imgAspect) {
+        scaleW = vw;
+        scaleH = vw / imgAspect;
+    } else {
+        scaleH = vh;
+        scaleW = vh * imgAspect;
+    }
+
+    // Final dynamic position
+    const posX = normX * scaleW;
+    const posY = normY * scaleH;
+
+    return (
+        <group position={[posX, posY, depth]} rotation={rotation} scale={[0.6, 0.6, 0.6]}>
+            {children}
+        </group>
+    );
+}
+
 export default function DashboardView({ isActive = true }) {
     const [activeIndex, setActiveIndexState] = useState(() => parseInt(sessionStorage.getItem('lumina_dashboard_activeIndex') || '0', 10));
 
@@ -899,7 +947,8 @@ export default function DashboardView({ isActive = true }) {
             <ThemeOverlay game={activeGame} isVisible={true} />
 
             {/* 2. Crossfading Game Logos — with Mouse Parallax */}
-            <div style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', zIndex: 10, pointerEvents: 'none',
+            <div style={{
+                position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', zIndex: 10, pointerEvents: 'none',
                 transform: `translate(${mousePos.x * -18}px, ${mousePos.y * -12}px)`,
                 transition: 'transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1)'
             }}>

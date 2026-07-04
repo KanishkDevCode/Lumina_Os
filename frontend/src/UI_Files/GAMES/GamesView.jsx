@@ -32,9 +32,9 @@ export default function GamesView({ setCurrentRoute }) {
   if (THEMES[activeGameId]?.lore) {
     theme.lore = THEMES[activeGameId].lore.map((loc, i) => {
       const cld = gamesData[activeGameId]?.lore?.[i] || {};
-      return { 
-        ...cld, 
-        name: loc.name, 
+      return {
+        ...cld,
+        name: loc.name,
         desc: loc.desc // Force local text always, keep cloud image
       };
     });
@@ -125,8 +125,9 @@ export default function GamesView({ setCurrentRoute }) {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('upload_preset', 'lumina_uploads');
+        formData.append('folder', `Lumina_OS/${activeGameId}`);
 
-        const response = await fetch('https://api.cloudinary.com/v1_1/dae4eteqc/upload', {
+        const response = await fetch('https://api.cloudinary.com/v1_1/jrasdicu/upload', {
           method: 'POST',
           body: formData,
         });
@@ -155,7 +156,10 @@ export default function GamesView({ setCurrentRoute }) {
           if (field === 'mainGallery') setActiveGalleryImg(url);
         }
 
-        useStore.getState().showToast('Upload Complete!', 'success');
+        // Auto-save to Firebase
+        await saveGameToCloud(activeGameId);
+
+        useStore.getState().showToast('Upload & Auto-Save Complete!', 'success');
       } catch (error) {
         console.error('Upload failed:', error);
         useStore.getState().showToast('Upload failed: ' + error.message, 'error');
@@ -267,7 +271,7 @@ export default function GamesView({ setCurrentRoute }) {
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerUp}
             style={{
-              // Change the second linear-gradient to end in rgba(0,0,0,1)
+              // Use only the local heroBg image so the mainCover doesn't override it
               backgroundImage: activeCarouselData?.heroBg
                 ? `linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 25%, rgba(0,0,0,0) 75%, rgba(0,0,0,0.9) 100%),
                    linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,1) 100%), 
@@ -714,34 +718,35 @@ export default function GamesView({ setCurrentRoute }) {
                   {(theme.weapons?.slice(0, 3) || ['SKILL TREE I', 'SKILL TREE II', 'SKILL TREE III']).map((wepOrName, i) => {
                     const treeName = typeof wepOrName === 'object' ? wepOrName.name : wepOrName;
                     return (
-                    <div key={treeName} style={{ background: 'rgba(0,0,0,0.2)', padding: '30px', borderRadius: '8px', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <div style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '20px' }}>{treeName}</div>
+                      <div key={treeName} style={{ background: 'rgba(0,0,0,0.2)', padding: '30px', borderRadius: '8px', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '20px' }}>{treeName}</div>
 
-                      <div
-                        className="media-placeholder"
-                        style={{
-                          width: '100%', height: '360px', cursor: theme.abilityTrees?.[i] ? 'pointer' : 'default',
-                          backgroundImage: theme.abilityTrees && theme.abilityTrees[i] ? `url(${theme.abilityTrees[i]})` : 'none',
-                          backgroundPosition: 'center', backgroundSize: 'contain', backgroundRepeat: 'no-repeat'
-                        }}
-                        onClick={() => { if (theme.abilityTrees?.[i]) setActiveGalleryImg(theme.abilityTrees[i]) }}
-                      >
-                        {!theme.abilityTrees?.[i] && <span style={{ opacity: 0.5, fontSize: '10px' }}>NO SKILL TREE UPLOADED</span>}
+                        <div
+                          className="media-placeholder"
+                          style={{
+                            width: '100%', height: '360px', cursor: theme.abilityTrees?.[i] ? 'pointer' : 'default',
+                            backgroundImage: theme.abilityTrees && theme.abilityTrees[i] ? `url(${theme.abilityTrees[i]})` : 'none',
+                            backgroundPosition: 'center', backgroundSize: 'contain', backgroundRepeat: 'no-repeat'
+                          }}
+                          onClick={() => { if (theme.abilityTrees?.[i]) setActiveGalleryImg(theme.abilityTrees[i]) }}
+                        >
+                          {!theme.abilityTrees?.[i] && <span style={{ opacity: 0.5, fontSize: '10px' }}>NO SKILL TREE UPLOADED</span>}
 
-                        {isAdmin && (
-                          <div
-                            className="admin-overlay"
-                            style={{ zIndex: 10 }}
-                            onClick={(e) => { e.stopPropagation(); handleMediaUpload('abilityTrees', i); }}
-                          >
-                            {theme.abilityTrees?.[i] ? 'CHANGE IMAGE' : 'UPLOAD IMAGE'}
-                          </div>
-                        )}
+                          {isAdmin && (
+                            <div
+                              className="admin-overlay"
+                              style={{ zIndex: 10 }}
+                              onClick={(e) => { e.stopPropagation(); handleMediaUpload('abilityTrees', i); }}
+                            >
+                              {theme.abilityTrees?.[i] ? 'CHANGE IMAGE' : 'UPLOAD IMAGE'}
+                            </div>
+                          )}
 
-                        {theme.abilityTrees?.[i] && renderRemoveBtn('abilityTrees', i)}
+                          {theme.abilityTrees?.[i] && renderRemoveBtn('abilityTrees', i)}
+                        </div>
                       </div>
-                    </div>
-                  )})}
+                    )
+                  })}
                 </div>
               </div>
             )}

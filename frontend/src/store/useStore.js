@@ -5,7 +5,7 @@ import { db } from '../config/firebase';
 export const useStore = create((set, get) => ({
   user: null, // Holds the logged-in admin
   setUser: (user) => set({ user }),
-  
+
   activeGameId: sessionStorage.getItem('lumina_activeGameId') || 'GOW',
   setActiveGameId: (id) => {
     sessionStorage.setItem('lumina_activeGameId', id);
@@ -13,8 +13,8 @@ export const useStore = create((set, get) => ({
   },
 
   // The dynamic game data
-  gamesData: {}, 
-  
+  gamesData: {},
+
   // Custom Toast Notifications
   toast: null,
   showToast: (message, type = 'success') => {
@@ -26,7 +26,7 @@ export const useStore = create((set, get) => ({
         }
         return state;
       });
-      
+
       // Remove from DOM after exit animation completes
       setTimeout(() => {
         set((state) => {
@@ -42,7 +42,7 @@ export const useStore = create((set, get) => ({
     set((state) => (state.toast ? { toast: { ...state.toast, isExiting: true } } : state));
     setTimeout(() => set({ toast: null }), 400);
   },
-  
+
   // Load data from Firebase
   fetchGameData: async (gameId) => {
     const docRef = doc(db, "games", gameId);
