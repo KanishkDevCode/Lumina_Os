@@ -138,7 +138,8 @@ export default function GamesView({ setCurrentRoute }) {
           throw new Error(data.error.message);
         }
 
-        const url = data.secure_url;
+        // Inject Cloudinary auto-optimization flags (Next-Gen formats + best quality)
+        const url = data.secure_url.replace('/upload/', '/upload/f_auto,q_auto:best/');
 
         if (index !== null) {
           const arr = theme[field] ? [...theme[field]] : [];

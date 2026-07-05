@@ -1,1 +1,0 @@
-export default function DocsView() { return <main className="scroll-container"><div className="content-bounds" style={{height:'60vh', display:'flex', alignItems:'center', justifyContent:'center'}}><h2 style={{color:'var(--text-muted)'}}>DOCUMENTATION MODULE</h2></div></main>; }

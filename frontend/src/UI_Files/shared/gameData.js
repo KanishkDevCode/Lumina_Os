@@ -348,39 +348,39 @@ export const CAROUSEL_GAMES = [
     titleLines: ['HITMAN'],
     sub: 'STEALTH ACTION',
     color: 'text-white',
-    heroBg: '/images/hitman-bg.jpg',
-    logoImg: '/images/hitman-logo.png'
+    heroBg: '/images/hitman-bg.webp',
+    logoImg: '/images/hitman-logo.webp'
   },
   {
     id: 'RDR',
     titleLines: ['RED DEAD REDEMPTION'],
     sub: 'OPEN-WORLD WESTERN',
     color: 'text-red',
-    heroBg: '/images/rdr-bg.jpg',
-    logoImg: '/images/rdr-logo.png'
+    heroBg: '/images/rdr-bg.webp',
+    logoImg: '/images/rdr-logo.webp'
   },
   {
     id: 'GOW',
     titleLines: ['GOD OF WAR'],
     sub: 'MYTHIC ACTION',
     color: 'text-blue',
-    heroBg: '/images/gow-bg.jpg', // Ensure this path matches where you put the file
-    logoImg: '/images/gow-logo.png'
+    heroBg: '/images/gow-bg.webp', // Ensure this path matches where you put the file
+    logoImg: '/images/gow-logo.webp'
   },
   {
     id: 'AC',
     titleLines: ['ASSASSIN\'S', 'CREED'],
     sub: 'ACTION ADVENTURE',
     color: 'text-white',
-    heroBg: '/images/ac-bg.jpg',
-    logoImg: '/images/ac-logo.png'
+    heroBg: '/images/ac-bg.webp',
+    logoImg: '/images/ac-logo.webp'
   },
   {
     id: 'HL',
     titleLines: ['HOGWARTS LEGACY'],
     sub: 'FANTASY RPG',
     color: 'text-red',
-    heroBg: '/images/hl-bg.jpg',
-    logoImg: '/images/hl-logo.png'
+    heroBg: '/images/hl-bg.webp',
+    logoImg: '/images/hl-logo.webp'
   }
 ]

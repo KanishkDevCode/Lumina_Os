@@ -14,9 +14,8 @@ import Icons from './UI_Files/shared/Icons'
 const DashboardView = lazy(() => import('./UI_Files/DASHBOARD/DashboardView'))
 const GamesView = lazy(() => import('./UI_Files/GAMES/GamesView'))
 const AssistantView = lazy(() => import('./UI_Files/ASSISTANT/AssistantView'))
-const DocsView = lazy(() => import('./UI_Files/DOCUMENTATION/DocsView'))
-const CommunityView = lazy(() => import('./UI_Files/COMMUNITY/CommunityView'))
-const SettingsView = lazy(() => import('./UI_Files/SETTINGS/SettingsView'))
+const CharactersView = lazy(() => import('./UI_Files/CHARACTERS/CharactersView'))
+const AboutView = lazy(() => import('./UI_Files/ABOUT/AboutView'))
 
 const AmbientParticles = React.memo(function AmbientParticles({ theme }) {
   const particles = useMemo(() => Array.from({ length: 40 }).map((_, i) => ({
@@ -48,11 +47,15 @@ const BOOT_STATUS_MSGS = [
 ];
 
 function BootScreen({ onComplete }) {
+  const [hasStarted, setHasStarted] = useState(false);
   const [progress, setProgress] = useState(0);
   const [phase, setPhase] = useState(0);
   const [statusMsg, setStatusMsg] = useState(BOOT_STATUS_MSGS[0]);
   const [isFadingOut, setIsFadingOut] = useState(false);
   const onCompleteRef = useRef(onComplete);
+
+  // Use a placeholder sound - replace with your actual file
+  const bootSound = useRef(new Audio('/sound_effects/startup.mp3'));
 
   const [glyphs] = useState(() => Array.from({ length: 24 }).map((_, i) => ({
     id: i,
@@ -65,12 +68,13 @@ function BootScreen({ onComplete }) {
     opacity: Math.random() * 0.25 + 0.05,
   })));
 
-  // Always keep a fresh reference to onComplete without triggering effects
   useEffect(() => {
     onCompleteRef.current = onComplete;
   }, [onComplete]);
 
   useEffect(() => {
+    if (!hasStarted) return; // Wait for user interaction to bypass audio block
+
     let mounted = true;
     const minLoadTime = 2500;
     const startTime = Date.now();
@@ -94,18 +98,14 @@ function BootScreen({ onComplete }) {
       let targetProgress;
 
       if (allDone) {
-        // If assets are loaded, we force the target to 100 based on remaining time
-        // We want it to hit 100% exactly at minLoadTime
         const completionRatio = Math.min(timeElapsed / minLoadTime, 1);
         targetProgress = Math.max(currentDisplayProgress, completionRatio * 100);
       } else {
-        // Normal loading: base on loaded assets + a tiny time-based trickle
         const realProgress = (loaded / total) * 100;
-        const fakeProgress = (timeElapsed / minLoadTime) * 60; // Up to 60% just from time
+        const fakeProgress = (timeElapsed / minLoadTime) * 60;
         targetProgress = Math.min(Math.max(realProgress, fakeProgress), 92);
       }
 
-      // Smoothly move display progress towards target
       currentDisplayProgress += (targetProgress - currentDisplayProgress) * 0.15 + 0.5;
       if (currentDisplayProgress > 100) currentDisplayProgress = 100;
 
@@ -118,6 +118,19 @@ function BootScreen({ onComplete }) {
         setStatusMsg(BOOT_STATUS_MSGS[BOOT_STATUS_MSGS.length - 1]);
         setPhase(5);
         clearInterval(updateLoop);
+
+        // Smoothly fade out and stop the audio when booting is complete
+        let fadeVol = bootSound.current.volume;
+        const fadeAudio = setInterval(() => {
+          fadeVol -= 0.05;
+          if (fadeVol <= 0) {
+            bootSound.current.volume = 0;
+            bootSound.current.pause();
+            clearInterval(fadeAudio);
+          } else {
+            bootSound.current.volume = fadeVol;
+          }
+        }, 50);
 
         setTimeout(() => {
           if (!mounted) return;
@@ -133,7 +146,7 @@ function BootScreen({ onComplete }) {
         setStatusMsg(BOOT_STATUS_MSGS[msgIdx]);
         setPhase(msgIdx);
       }
-    }, 30); // Fast 30ms interval for smooth number counting
+    }, 30);
 
     const checkDone = () => {
       loaded++;
@@ -155,7 +168,13 @@ function BootScreen({ onComplete }) {
       mounted = false;
       clearInterval(updateLoop);
     };
-  }, []);
+  }, [hasStarted]);
+
+  const handleStart = () => {
+    bootSound.current.volume = 0.5;
+    bootSound.current.play().catch(e => console.log('Audio blocked', e));
+    setHasStarted(true);
+  };
 
   const arcRadius = 54;
   const arcCircumference = 2 * Math.PI * arcRadius;
@@ -203,52 +222,70 @@ function BootScreen({ onComplete }) {
         }} />
       ))}
 
-      {/* Circular arc progress ring */}
-      <div style={{ position: 'relative', width: 140, height: 140, marginBottom: 32 }}>
-        <svg width="140" height="140" style={{ transform: 'rotate(-90deg)' }}>
-          <circle cx="70" cy="70" r={arcRadius} fill="none" className="omni-stroke-dim" strokeWidth="3" />
-          <circle cx="70" cy="70" r={arcRadius} fill="none" className="omni-stroke"
-            strokeWidth="3" strokeLinecap="round"
-            strokeDasharray={arcCircumference}
-            strokeDashoffset={arcOffset}
-            style={{ transition: 'stroke-dashoffset 0.3s ease' }}
-          />
-        </svg>
-        {/* Center content inside ring */}
-        <div style={{
-          position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center'
-        }}>
-          <div className="omni-text" style={{ fontSize: 28, fontWeight: 900, lineHeight: 1 }}>
-            {Math.floor(progress)}
+      {!hasStarted ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '30px', zIndex: 10 }}>
+          <div className="omni-title" style={{ fontSize: 26, fontWeight: 900, letterSpacing: 10, animation: 'omniTitlePulse 4s infinite alternate ease-in-out' }}>
+            LUMINA_OS
           </div>
-          <div className="omni-text-dim" style={{ fontSize: 10, letterSpacing: 2 }}>%</div>
+          <button onClick={handleStart} style={{
+            background: 'transparent', border: '1px solid #00d2ff', color: '#00d2ff',
+            padding: '15px 40px', fontSize: '14px', letterSpacing: '4px', cursor: 'pointer',
+            boxShadow: '0 0 15px rgba(0, 210, 255, 0.4)', transition: '0.3s', textTransform: 'uppercase'
+          }} onMouseOver={e => { e.target.style.background = 'rgba(0, 210, 255, 0.2)'; e.target.style.boxShadow = '0 0 25px rgba(0, 210, 255, 0.8)'; }}
+             onMouseOut={e => { e.target.style.background = 'transparent'; e.target.style.boxShadow = '0 0 15px rgba(0, 210, 255, 0.4)'; }}>
+            INITIALIZE SYSTEM
+          </button>
         </div>
-      </div>
-
-      {/* Title */}
-      <div className="omni-title" style={{ fontSize: 26, fontWeight: 900, letterSpacing: 10, marginBottom: 8, animation: 'omniTitlePulse 4s infinite alternate ease-in-out' }}>
-        LUMINA_OS
-      </div>
-      <div className="omni-text-dim" style={{ fontSize: 10, letterSpacing: 4, marginBottom: 32 }}>
-        AGENTIC GAMING PLATFORM
-      </div>
-
-      {/* Status lines */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: 340, padding: '0 10px' }}>
-        {BOOT_STATUS_MSGS.slice(0, Math.min(phase + 1, BOOT_STATUS_MSGS.length - 1)).map((msg, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, animation: 'bootLineIn 0.4s ease-out both' }}>
-            <span style={{ color: '#00ff88', fontSize: 10 }}>✓</span>
-            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', letterSpacing: 1 }}>{msg}</span>
+      ) : (
+        <>
+          {/* Circular arc progress ring */}
+          <div style={{ position: 'relative', width: 140, height: 140, marginBottom: 32 }}>
+            <svg width="140" height="140" style={{ transform: 'rotate(-90deg)' }}>
+              <circle cx="70" cy="70" r={arcRadius} fill="none" className="omni-stroke-dim" strokeWidth="3" />
+              <circle cx="70" cy="70" r={arcRadius} fill="none" className="omni-stroke"
+                strokeWidth="3" strokeLinecap="round"
+                strokeDasharray={arcCircumference}
+                strokeDashoffset={arcOffset}
+                style={{ transition: 'stroke-dashoffset 0.3s ease' }}
+              />
+            </svg>
+            {/* Center content inside ring */}
+            <div style={{
+              position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center'
+            }}>
+              <div className="omni-text" style={{ fontSize: 28, fontWeight: 900, lineHeight: 1 }}>
+                {Math.floor(progress)}
+              </div>
+              <div className="omni-text-dim" style={{ fontSize: 10, letterSpacing: 2 }}>%</div>
+            </div>
           </div>
-        ))}
-        {progress < 100 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span className="omni-color" style={{ fontSize: 10, animation: 'bootCursor 0.8s step-end infinite, omniColor 4s infinite alternate ease-in-out' }}>▶</span>
-            <span className="omni-text-dim" style={{ fontSize: 10, letterSpacing: 1 }}>{statusMsg}</span>
+
+          {/* Title */}
+          <div className="omni-title" style={{ fontSize: 26, fontWeight: 900, letterSpacing: 10, marginBottom: 8, animation: 'omniTitlePulse 4s infinite alternate ease-in-out' }}>
+            LUMINA_OS
           </div>
-        )}
-      </div>
+          <div className="omni-text-dim" style={{ fontSize: 10, letterSpacing: 4, marginBottom: 32 }}>
+            AGENTIC GAMING PLATFORM
+          </div>
+
+          {/* Status lines */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: 340, padding: '0 10px' }}>
+            {BOOT_STATUS_MSGS.slice(0, Math.min(phase + 1, BOOT_STATUS_MSGS.length - 1)).map((msg, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, animation: 'bootLineIn 0.4s ease-out both' }}>
+                <span style={{ color: '#00ff88', fontSize: 10 }}>✓</span>
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', letterSpacing: 1 }}>{msg}</span>
+              </div>
+            ))}
+            {progress < 100 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span className="omni-color" style={{ fontSize: 10, animation: 'bootCursor 0.8s step-end infinite, omniColor 4s infinite alternate ease-in-out' }}>▶</span>
+                <span className="omni-text-dim" style={{ fontSize: 10, letterSpacing: 1 }}>{statusMsg}</span>
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       <style>{`
         /* OMNI THEME COLORS: GOW(#00d2ff), AC(#ffffff), HL(#2a9d8f), RDR(#d62828), HITMAN(#8b939c) */
@@ -343,15 +380,49 @@ function BootScreen({ onComplete }) {
 
 export default function App() {
   const [currentRoute, setCurrentRoute] = useState('HUB')
-  const [activeNav, setActiveNavState] = useState(() => sessionStorage.getItem('lumina_activeNav') || 'DASHBOARD') // Handles Top Nav Routing
+  
+  // Initialize from URL first, fallback to session storage, then DASHBOARD
+  const getInitialNav = () => {
+    const path = window.location.pathname.replace('/', '').toUpperCase();
+    const validNavs = ['DASHBOARD', 'GAMES', 'ASSISTANT', 'CHARACTERS', 'ABOUT'];
+    if (validNavs.includes(path)) return path;
+    return sessionStorage.getItem('lumina_activeNav') || 'DASHBOARD';
+  };
+
+  const [activeNav, setActiveNavState] = useState(getInitialNav); 
   const [isBooting, setIsBooting] = useState(() => !sessionStorage.getItem('lumina_booted'))
   const navContainerRef = useRef(null);
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
 
   const setActiveNav = (nav) => {
     sessionStorage.setItem('lumina_activeNav', nav);
+    if (window.location.pathname !== `/${nav.toLowerCase()}`) {
+      window.history.pushState(null, '', `/${nav.toLowerCase()}`);
+    }
     setActiveNavState(nav);
   }
+
+  // Listen to browser Back/Forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.replace('/', '').toUpperCase();
+      const validNavs = ['DASHBOARD', 'GAMES', 'ASSISTANT', 'CHARACTERS', 'ABOUT'];
+      if (validNavs.includes(path)) {
+        setActiveNavState(path);
+        sessionStorage.setItem('lumina_activeNav', path);
+      } else if (path === '') {
+        setActiveNavState('DASHBOARD');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    
+    // Ensure initial URL is perfectly synced if user landed on root
+    if (window.location.pathname === '/') {
+       window.history.replaceState(null, '', `/${activeNav.toLowerCase()}`);
+    }
+    
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const { user, setUser, activeGameId, gamesData, fetchGameData } = useStore()
   const [showLoginModal, setShowLoginModal] = useState(false)
@@ -385,9 +456,8 @@ export default function App() {
     switch (activeNav) {
       case 'GAMES': return <GamesView setCurrentRoute={setCurrentRoute} />
       case 'ASSISTANT': return <AssistantView />
-      case 'DOCUMENTATION': return <DocsView />
-      case 'COMMUNITY': return <CommunityView />
-      case 'SETTINGS': return <SettingsView />
+      case 'CHARACTERS': return <CharactersView />
+      case 'ABOUT': return <AboutView />
       default: return null;
     }
   }
@@ -425,9 +495,8 @@ export default function App() {
             <span className={`nav-item ${activeNav === 'DASHBOARD' ? 'active' : ''}`} onClick={() => setActiveNav('DASHBOARD')}>{Icons.Dashboard} DASHBOARD</span>
             <span className={`nav-item ${activeNav === 'GAMES' ? 'active' : ''}`} onClick={() => setActiveNav('GAMES')}>{Icons.Games} GAMES</span>
             <span className={`nav-item ${activeNav === 'ASSISTANT' ? 'active' : ''}`} onClick={() => setActiveNav('ASSISTANT')}>{Icons.Assistant} ASSISTANT</span>
-            <span className={`nav-item ${activeNav === 'DOCUMENTATION' ? 'active' : ''}`} onClick={() => setActiveNav('DOCUMENTATION')}>{Icons.Docs} DOCUMENTATION</span>
-            <span className={`nav-item ${activeNav === 'COMMUNITY' ? 'active' : ''}`} onClick={() => setActiveNav('COMMUNITY')}>{Icons.Community} COMMUNITY</span>
-            <span className={`nav-item ${activeNav === 'SETTINGS' ? 'active' : ''}`} onClick={() => setActiveNav('SETTINGS')}>{Icons.Settings} SETTINGS</span>
+            <span className={`nav-item ${activeNav === 'CHARACTERS' ? 'active' : ''}`} onClick={() => setActiveNav('CHARACTERS')}>{Icons.Characters} CHARACTERS</span>
+            <span className={`nav-item ${activeNav === 'ABOUT' ? 'active' : ''}`} onClick={() => setActiveNav('ABOUT')}>{Icons.About} ABOUT DEVELOPER</span>
           </div>
           <div className="nav-empty-spacer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
             {isAdmin ? (

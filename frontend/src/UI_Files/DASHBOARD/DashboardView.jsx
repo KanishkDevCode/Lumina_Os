@@ -11,9 +11,9 @@ const DASHBOARD_GAMES = [
     {
         id: 'GOW',
         title: 'GOD OF WAR',
-        logoPath: '/Dashboard_Assests/GOW_LOGO.png',
-        bgPath: '/Dashboard_Assests/GOW_BG.png',
-        modelPath: '/models/axe.glb',
+        logoPath: '/Dashboard_Assests/GOW_LOGO.webp',
+        bgPath: '/Dashboard_Assests/GOW_BG.webp',
+        modelPath: '/models/axe_draco.glb',
         themeColor: '#00d2ff', // Cyan
         modelScale: 5,
         modelLeft: '72vw',
@@ -51,9 +51,9 @@ const DASHBOARD_GAMES = [
     {
         id: 'AC',
         title: "ASSASSIN'S CREED",
-        logoPath: '/Dashboard_Assests/AC_LOGO.png',
-        bgPath: '/Dashboard_Assests/AC_BG.png',
-        modelPath: '/models/hidden_blade.glb',
+        logoPath: '/Dashboard_Assests/AC_LOGO.webp',
+        bgPath: '/Dashboard_Assests/AC_BG.webp',
+        modelPath: '/models/hidden_blade_draco.glb',
         themeColor: '#ffffff', // White
         modelScale: 2,
         modelLeft: '31vw',
@@ -91,9 +91,9 @@ const DASHBOARD_GAMES = [
     {
         id: 'HL',
         title: "HOGWARTS LEGACY",
-        logoPath: '/Dashboard_Assests/HL_LOGO.png',
-        bgPath: '/Dashboard_Assests/HL_BG.png',
-        modelPath: '/models/wand.glb',
+        logoPath: '/Dashboard_Assests/HL_LOGO.webp',
+        bgPath: '/Dashboard_Assests/HL_BG.webp',
+        modelPath: '/models/wand_draco.glb',
         themeColor: '#2a9d8f', // Emerald Green
         modelScale: 2.3,
         modelLeft: '70vw',
@@ -134,9 +134,9 @@ const DASHBOARD_GAMES = [
     {
         id: 'RDR',
         title: "RED DEAD REDEMPTION",
-        logoPath: '/Dashboard_Assests/RDR_LOGO.png',
-        bgPath: '/Dashboard_Assests/RDR_BG.png',
-        modelPath: '/models/revolver.glb',
+        logoPath: '/Dashboard_Assests/RDR_LOGO.webp',
+        bgPath: '/Dashboard_Assests/RDR_BG.webp',
+        modelPath: '/models/revolver_draco.glb',
         themeColor: '#d62828', // Crimson Red
         modelScale: 29,
         modelLeft: '28vw',
@@ -177,9 +177,9 @@ const DASHBOARD_GAMES = [
     {
         id: 'HITMAN',
         title: "HITMAN",
-        logoPath: '/Dashboard_Assests/HITMAN_LOGO.png',
-        bgPath: '/Dashboard_Assests/HITMAN_BG.png',
-        modelPath: '/models/pistol.glb',
+        logoPath: '/Dashboard_Assests/HITMAN_LOGO.webp',
+        bgPath: '/Dashboard_Assests/HITMAN_BG.webp',
+        modelPath: '/models/pistol_draco.glb',
         themeColor: '#8b939c', // Shadow Silver
         modelScale: 0.35,
         modelLeft: '75vw',
@@ -829,6 +829,14 @@ export default function DashboardView({ isActive = true }) {
     const scrollAccumulator = useRef(0);
     const scrollCooldown = useRef(false);
     const mainRef = useRef(null);
+
+    // Sync global theme with Dashboard's local session state when Dashboard becomes active
+    useEffect(() => {
+        if (isActive) {
+            const game = DASHBOARD_GAMES[activeIndex];
+            if (game) setActiveGameId(game.id);
+        }
+    }, [isActive, activeIndex, setActiveGameId]);
 
     // Track mouse for cursor aura + logo parallax
     useEffect(() => {
