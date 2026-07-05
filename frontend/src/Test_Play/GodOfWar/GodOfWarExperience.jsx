@@ -98,7 +98,7 @@ function FimbulwinterSkybox({ appState }) {
 
 
 function LevelEnvironment() {
-  const { scene } = useGLTF('/models/Environment(GOW).glb')
+  const { scene } = useGLTF('/models/Environment(GOW)_draco.glb')
 
   // Traverse the model to adjust materials so they match the Fimbulwinter vibe
   useEffect(() => {
@@ -141,10 +141,10 @@ export default function GodOfWarExperience({ onExit }) {
   const [isDashboardOpen, setIsDashboardOpen] = useState(false)
   const envRef = useRef()
 
-  const [weaponPath, setWeaponPath] = useState('/models/axe.glb')
+  const [weaponPath, setWeaponPath] = useState('/models/axe_draco.glb')
 
   const handleWeaponSelect = (path) => {
-    if (path === '/models/axe.glb') {
+    if (path === '/models/axe_draco.glb') {
       setWeaponPath(path)
       setHudStatus("WEAPON AWAKENED")
     } else {
@@ -301,15 +301,15 @@ export default function GodOfWarExperience({ onExit }) {
             <div style={{ marginTop: '40px', flexGrow: 1 }}>
               <p style={{ margin: 0, borderBottom: '1px solid rgba(0,255,255,0.15)', paddingBottom: '10px', color: '#0ff', fontSize: '11px', letterSpacing: '2px', marginBottom: '15px' }}>ARMORY PROTOCOLS</p>
 
-              <button onClick={() => handleWeaponSelect('/models/axe.glb')} className={`armory-btn ${weaponPath === '/models/axe.glb' ? 'active' : ''}`}>
-                [01] LEVIATHAN AXE
+              <button onClick={() => handleWeaponSelect('/models/axe_draco.glb')} className={`armory-btn ${weaponPath === '/models/axe_draco.glb' ? 'active' : ''}`}>
+                <div className="btn-icon">⛏</div>
+                <span>LEVIATHAN AXE</span>
               </button>
-
-              <button onClick={() => handleWeaponSelect('/models/hammer.glb')} className={`armory-btn ${weaponPath === '/models/hammer.glb' ? 'active' : ''}`}>
-                [02] MJOLNIR (LOCKED)
+              <button onClick={() => handleWeaponSelect('/models/hammer_draco.glb')} className={`armory-btn ${weaponPath === '/models/hammer_draco.glb' ? 'active' : ''}`}>
+                <div className="btn-icon">⚡</div>
+                <span>MJÖLNIR</span>
               </button>
-
-              <button onClick={() => handleWeaponSelect('/models/spear.glb')} className={`armory-btn ${weaponPath === '/models/spear.glb' ? 'active' : ''}`}>
+              <button onClick={() => handleWeaponSelect('/models/spear_draco.glb')} className={`armory-btn ${weaponPath === '/models/spear_draco.glb' ? 'active' : ''}`}>
                 [03] DRAUPNIR SPEAR (LOCKED)
               </button>
             </div>

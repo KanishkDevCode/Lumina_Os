@@ -1,5 +1,9 @@
 import React, { useState, useMemo, useEffect, Suspense, lazy, useRef } from 'react'
-import GodOfWarExperience from './pages/GodOfWar/GodOfWarExperience'
+import GodOfWarExperience from './Test_Play/GodOfWar/GodOfWarExperience'
+import AssassinsCreedExperience from './Test_Play/AssassinsCreed/AssassinsCreedExperience'
+import HogwartsExperience from './Test_Play/HogwartsLegacy/HogwartsExperience'
+import RedDeadExperience from './Test_Play/RedDead/RedDeadExperience'
+import HitmanExperience from './Test_Play/Hitman/HitmanExperience'
 import { useStore } from './store/useStore'
 import { auth } from './config/firebase'
 import LoginModal from "./components/LoginModal";
@@ -721,8 +725,12 @@ export default function App() {
     )
   }
 
-  // Handoff to 3D Experience unchanged
+  // Handoff to 3D Experience
   if (currentRoute === 'PLAYING_GOW') return <GodOfWarExperience onExit={() => setCurrentRoute('HUB')} />
+  if (currentRoute === 'PLAYING_AC') return <AssassinsCreedExperience onExit={() => setCurrentRoute('HUB')} />
+  if (currentRoute === 'PLAYING_HL') return <HogwartsExperience onExit={() => setCurrentRoute('HUB')} />
+  if (currentRoute === 'PLAYING_RDR') return <RedDeadExperience onExit={() => setCurrentRoute('HUB')} />
+  if (currentRoute === 'PLAYING_HITMAN') return <HitmanExperience onExit={() => setCurrentRoute('HUB')} />
 
   return null
 }

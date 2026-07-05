@@ -888,7 +888,7 @@ export default function GamesView({ setCurrentRoute }) {
             </div>
 
             <div className="footer-right">
-              <button className="btn-massive-play" onClick={() => { if (activeGameId === 'GOW') setCurrentRoute('PLAYING_GOW') }}>
+              <button className="btn-massive-play" onClick={() => setCurrentRoute('PLAYING_' + activeGameId)}>
                 <div className="play-text"><span className="play-ico">{Icons.Play}</span> TEST PLAY</div>
                 <div className="play-sub">Launch your demo gameplay</div>
               </button>
