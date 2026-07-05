@@ -13,3 +13,10 @@ venv/
 # System
 .DS_Store
 Thumbs.db
+
+# Ignore uncompressed assets
+frontend/public/images/*.jpg
+frontend/public/images/*.png
+frontend/public/Dashboard_Assests/*.png
+frontend/public/models/*.glb
+!frontend/public/models/*_draco.glb
