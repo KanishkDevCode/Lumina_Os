@@ -26,7 +26,7 @@ Lumina OS bridges the gap between web development and game design, delivering a 
 * **Cinematic Omni-Theme Boot Sequence:** A physics-based, high-performance loading state utilizing cubic-bezier animations, SVG hex grids, and floating particles that cycle through the featured game aesthetics.
 * **Dynamic Contextual Theming System:** Instantaneous UI overhauls triggered by game selection, applying unique visual effects (e.g., emerald glows and magic orbs for *Hogwarts Legacy*, security laser sweeps for *Hitman*).
 * **Agentic AI Assistant:** A contextual chat interface that dynamically shifts personas (e.g., Mimir or Diana) based on the active hub, simulating live data streams with cinematic "Uplink" splash animations.
-* **Immersive 3D Rendering (React Three Fiber):** Integration of `.glb` models and post-processing effects directly into the web canvas, bringing the gaming hub to life without sacrificing browser performance.
+* **Immersive 3D Rendering & Holograms (React Three Fiber):** Integration of interactive 3D elements, such as glossy rotating character cards, floating holographic projections, and custom particle engines (like the dynamic game-specific Symbol Rain) directly into the DOM.
 * **Admin Dashboard & Cloud Sync:** A fully secured Admin mode allowing authorized users to edit game metadata, upload cover art via Cloudinary, and instantly sync changes across all clients via Firebase Firestore.
 
 ---
@@ -72,7 +72,11 @@ Follow these instructions to set up Lumina OS locally.
 
 ---
 
-## 🏛️ Master Architecture
+## 🏛️ Architecture & Flowcharts
+
+Lumina OS utilizes multiple specialized micro-architectures that work in tandem to provide a robust, state-driven, and highly visual experience.
+
+### 1. Master System Architecture
 
 ```mermaid
 flowchart TD
@@ -98,6 +102,52 @@ Cloudinary --> FirebaseDB
 UILayer --> FinalOutput["Immersive OS Interface"]:::final
 ```
 
+### 2. Contextual Theme Injection Pipeline
+
+This flowchart outlines how Lumina OS dynamically alters its entire visual identity when a user switches the active game hub (e.g., from God of War to Hitman).
+
+```mermaid
+flowchart LR
+    A[User Selects Game Hub] -->|Dispatches Action| B(Zustand Global Store);
+    B -->|Update activeGameId| C{Theme Engine};
+    
+    C -->|Extract Variables| D[CSS Custom Properties];
+    D -->|Update DOM Root| E[Global React Layout];
+    
+    C -->|Extract Palettes| F[React Three Fiber Canvas];
+    F -->|Update Emissive Maps| G[3D Character Cards];
+    
+    C -->|Extract Game Context| H[2D Animation Engine];
+    H -->|Swap Particle Set| I[Dynamic Symbol Rain (Runes, Binary, etc.)];
+    
+    style A fill:#4CAF50,stroke:#388E3C,stroke-width:2px,color:white;
+    style B fill:#2196F3,stroke:#1976D2,stroke-width:2px,color:white;
+    style C fill:#FF9800,stroke:#F57C00,stroke-width:2px,color:white;
+```
+
+### 3. High-Fidelity 3D Rendering Pipeline
+
+Lumina OS utilizes `react-three-fiber` and `drei` to render physically based 3D elements inside the standard React component tree.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant React UI
+    participant Canvas (Three.js)
+    participant Physics Engine
+    participant 2D Canvas (SymbolRain)
+    
+    User->>React UI: Navigate to Characters View
+    React UI->>2D Canvas (SymbolRain): Initialize 20fps Particle Loop
+    React UI->>Canvas (Three.js): Mount <Canvas> Environment
+    Canvas (Three.js)->>Physics Engine: Initialize Floating/Rotation Hooks
+    Canvas (Three.js)->>Canvas (Three.js): Load Texture Assets (Kratos, Isabella, etc.)
+    Physics Engine-->>Canvas (Three.js): Apply Continuous Float Interpolation
+    Canvas (Three.js)-->>React UI: Render Interactive 3D Glossy Cards
+    2D Canvas (SymbolRain)-->>React UI: Render Themed Background Particles
+    React UI-->>User: Display Seamless 2D/3D Hybrid Scene
+```
+
 ---
 
 ## 🔄 The Full Automated Pipeline
@@ -111,7 +161,7 @@ When the application is launched, the `Vite` server serves the initial payload. 
 Once core assets are cached, `Zustand` mounts the global store, checking session storage for the user's last active game state. The Dynamic Theme Engine immediately injects the appropriate CSS variables (e.g., Cyan for God of War, Crimson for RDR2) into the DOM, swapping out typography, hover states, and ambient particle colors across the entire OS.
 
 ### Phase 3: 3D Canvas Render Loop & Responsive Projection
-`React Three Fiber` mounts the global `<Canvas>` component. Lighting, post-processing (bloom, ambient occlusion), and specific 3D elements (falling runes, memory fragments) are instantiated. Complex 3D mathematical alignments (like projecting 3D volumetric smoke perfectly onto a 2D CSS `cover` background) are recalculated in real-time within the `useFrame` loop, ensuring perfect visual fidelity across all aspect ratios.
+`React Three Fiber` mounts the global `<Canvas>` component. Lighting, post-processing (bloom, ambient occlusion), and specific 3D elements (falling runes, memory fragments) are instantiated. Complex 3D mathematical alignments are recalculated in real-time within the `useFrame` loop, ensuring perfect visual fidelity across all aspect ratios. We also employ hybrid 2D Canvas overlays (like the animated SymbolRain) mapped behind the 3D `<Canvas>` to save WebGL memory while maximizing aesthetics.
 
 ### Phase 4: Admin Dashboard & Cloud Asset Synchronization
 Authorized users can access the Admin Dashboard to modify game metadata. 
@@ -138,12 +188,12 @@ Lumina_Os/
 │   ├── public/
 │   │   ├── assets/              # UI textures, icons, and SVG hex grids
 │   │   ├── images/              # Local curated Hero Backgrounds
-│   │   └── models/              # Heavy 3D .glb assets (Draco compressed)
+│   │   └── cards/               # UI Character Cards (Agent47, Isabella, Kratos)
 │   ├── src/
 │   │   ├── components/          # Reusable UI (Hub, CinematicSlider, Chat)
 │   │   ├── config/              # Firebase Initialization
 │   │   ├── store/               # Zustand state slices (theme, user, chat)
-│   │   ├── UI_Files/            # Core Views (Dashboard, GamesView)
+│   │   ├── UI_Files/            # Core Views (CharactersView, Dashboard)
 │   │   ├── styles/              # Global CSS, CSS Variables, Tailwind
 │   │   ├── utils/               # Animation helpers, Framer Motion variants
 │   │   ├── App.jsx              # Main routing and canvas mounting
