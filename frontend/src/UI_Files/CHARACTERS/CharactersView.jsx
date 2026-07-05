@@ -1,191 +1,227 @@
 import React, { useState, Suspense, useEffect, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Environment, ContactShadows, Float, useGLTF } from '@react-three/drei';
+import { ContactShadows, Float, RoundedBox, OrbitControls } from '@react-three/drei';
 import { THEMES } from '../shared/gameData';
 import { useStore } from '../../store/useStore';
 import * as THREE from 'three';
 
-// Placeholder Model Component
-function CharacterModel({ url, scale, pivot = [0, 0, 0], animClass }) {
-  const { scene } = useGLTF(url);
-  
-  const { clonedScene, hitboxRadius } = React.useMemo(() => {
-    const clone = scene.clone();
-    const box = new THREE.Box3().setFromObject(clone);
-    const center = new THREE.Vector3();
-    box.getCenter(center);
-    
-    const size = new THREE.Vector3();
-    box.getSize(size);
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const rawRadius = (maxDim / 2) || 1;
+// Holographic Trading Card Component
+function HologramCard({ char, animClass }) {
+  const { glowColor, roughness, metalness, image } = char;
+  const [charTexture, setCharTexture] = useState(null);
 
-    const pivotOffset = new THREE.Vector3(...pivot);
-    center.sub(pivotOffset);
-    
-    clone.position.sub(center);
-    return { clonedScene: clone, hitboxRadius: rawRadius };
-  }, [scene, pivot]);
-
-  // Apply a uniform 0.8 multiplier to make them slightly smaller to fit the Characters left panel
-  const adjustedScale = scale * 0.8;
-
-  const spinRef = useRef();
-  const { pointer } = useThree();
-
-  const isDragging = useRef(false);
-  const previousQuat = useRef(new THREE.Quaternion());
-  const currentQuat = useRef(new THREE.Quaternion());
-  const startVector = useRef(new THREE.Vector3());
-
+  // Load the full card image (user provided)
   useEffect(() => {
-    currentQuat.current.identity();
-    if (spinRef.current) spinRef.current.quaternion.identity();
-  }, [url]);
-
-  const getArcballVector = (ptr) => {
-      const x = ptr.x;
-      const y = ptr.y;
-      const rSq = x * x + y * y;
-      if (rSq <= 1) {
-          return new THREE.Vector3(x, y, Math.sqrt(1 - rSq));
-      } else {
-          const r = Math.sqrt(rSq);
-          return new THREE.Vector3(x / r, y / r, 0).normalize();
+    if (!image) { setCharTexture(null); return; }
+    const loader = new THREE.TextureLoader();
+    loader.load(
+      image,
+      (txt) => {
+        txt.colorSpace = THREE.SRGBColorSpace;
+        setCharTexture(txt);
+      },
+      undefined,
+      (err) => {
+        console.error(`Failed to load image: ${image}`, err);
+        setCharTexture(null);
       }
-  };
+    );
+  }, [image]);
 
-  const handlePointerDown = (e) => {
-      e.stopPropagation();
-      e.target.setPointerCapture(e.pointerId);
-      isDragging.current = true;
-      startVector.current.copy(getArcballVector(pointer));
-      previousQuat.current.copy(currentQuat.current);
-  };
-
-  const handlePointerMove = (e) => {
-      if (!isDragging.current) return;
-      e.stopPropagation();
-      const currentVector = getArcballVector(pointer);
-      const deltaQuat = new THREE.Quaternion().setFromUnitVectors(startVector.current, currentVector);
-      currentQuat.current.copy(deltaQuat).multiply(previousQuat.current);
-  };
-
-  const handlePointerUp = (e) => {
-      if (isDragging.current) {
-          e.target.releasePointerCapture(e.pointerId);
-          isDragging.current = false;
-      }
-  };
-
-  // Animate 3D Model Entrance
+  const cardRef = useRef();
   const spawnPos = useRef(new THREE.Vector3());
   const spawnScale = useRef(new THREE.Vector3(1, 1, 1));
   const warpSpin = useRef(0);
 
   useEffect(() => {
-    // 'Warp' Stretch & Spin Effect
     if (animClass === 'slide-in-up') {
-      spawnPos.current.set(0, -12, 0);
-      spawnScale.current.set(0.05, 4, 0.05);
-      warpSpin.current = Math.PI * 2;
+      spawnPos.current.set(0, -12, 0); spawnScale.current.set(0.05, 4, 0.05); warpSpin.current = Math.PI * 2;
     } else if (animClass === 'slide-in-down') {
-      spawnPos.current.set(0, 10, 0);
-      spawnScale.current.set(0.05, 4, 0.05);
-      warpSpin.current = -Math.PI * 2;
+      spawnPos.current.set(0, 10, 0); spawnScale.current.set(0.05, 4, 0.05); warpSpin.current = -Math.PI * 2;
     } else if (animClass === 'slide-in-left') {
-      spawnPos.current.set(12, -1, 0);
-      spawnScale.current.set(4, 0.05, 0.05);
-      warpSpin.current = Math.PI * 2;
+      spawnPos.current.set(12, -1, 0); spawnScale.current.set(4, 0.05, 0.05); warpSpin.current = Math.PI * 2;
     } else if (animClass === 'slide-in-right') {
-      spawnPos.current.set(-12, -1, 0);
-      spawnScale.current.set(4, 0.05, 0.05);
-      warpSpin.current = -Math.PI * 2;
-    } else {
-      spawnPos.current.set(0, -1, 0);
-      spawnScale.current.set(1, 1, 1);
-      warpSpin.current = 0;
+      spawnPos.current.set(-12, -1, 0); spawnScale.current.set(4, 0.05, 0.05); warpSpin.current = -Math.PI * 2;
     }
-    
-    if (spinRef.current) {
-      spinRef.current.position.copy(spawnPos.current);
-      spinRef.current.scale.copy(spawnScale.current);
+    if (cardRef.current) {
+      cardRef.current.position.copy(spawnPos.current);
+      cardRef.current.scale.copy(spawnScale.current);
     }
-  }, [url, animClass]);
+  }, [char, animClass]);
 
-  useFrame((state, delta) => {
-      if (spinRef.current) {
-          // Snap position back to center
-          spawnPos.current.lerp(new THREE.Vector3(0, -1, 0), 0.12);
-          spinRef.current.position.copy(spawnPos.current);
-          
-          // Snap scale back to normal
-          spawnScale.current.lerp(new THREE.Vector3(1, 1, 1), 0.18);
-          spinRef.current.scale.copy(spawnScale.current);
+  useFrame(() => {
+    if (!cardRef.current) return;
+    spawnPos.current.lerp(new THREE.Vector3(0, 0, 0), 0.12);
+    spawnScale.current.lerp(new THREE.Vector3(1, 1, 1), 0.15);
+    warpSpin.current = THREE.MathUtils.lerp(warpSpin.current, 0, 0.1);
 
-          // Dampen warp spin
-          warpSpin.current = THREE.MathUtils.lerp(warpSpin.current, 0, 0.15);
-          
-          spinRef.current.quaternion.slerp(currentQuat.current, 0.2);
-
-          // Apply high-speed warp spin on top of normal rotation
-          if (Math.abs(warpSpin.current) > 0.01) {
-             const warpQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), warpSpin.current);
-             spinRef.current.quaternion.multiply(warpQuat);
-          }
-          
-          if (!isDragging.current) {
-              const autoSpinQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), delta * 0.1);
-              currentQuat.current.premultiply(autoSpinQuat);
-          }
-      }
+    cardRef.current.position.copy(spawnPos.current);
+    cardRef.current.scale.copy(spawnScale.current);
+    cardRef.current.rotation.y = warpSpin.current;
   });
 
   return (
-    <Float speed={2} rotationIntensity={0} floatIntensity={0.5}>
-      <group position={[0, 0, 0]}>
-          <group ref={spinRef}>
-              <group rotation={[0, Math.PI / 2, 0]} scale={adjustedScale}>
-                  <primitive object={clonedScene} />
-              </group>
-          </group>
-          <mesh
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onPointerOut={handlePointerUp}
-          >
-              <sphereGeometry args={[Math.min(hitboxRadius * adjustedScale * 1.5, 10), 16, 16]} />
-              <meshBasicMaterial transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} />
+    <Float speed={2} rotationIntensity={0.15} floatIntensity={0.25}>
+      <group ref={cardRef}>
+
+        {/* MAIN CARD BODY — Flat image mapped onto a 3D box */}
+        <RoundedBox args={[3.2, 4.6, 0.12]} radius={0.08} smoothness={4} position={[0, 0, 0]}>
+          <meshPhysicalMaterial
+            color={new THREE.Color(char.glowColor).multiplyScalar(0.3)}
+            roughness={0.25}
+            metalness={0.7}
+            clearcoat={1.0}
+            clearcoatRoughness={0.2}
+          />
+        </RoundedBox>
+
+        {/* PERFECT FLAT FRONT FACE FOR THE IMAGE (Leaves a cool 0.08 bezel) */}
+        {charTexture && (
+          <mesh position={[0, 0, 0.061]}>
+            <planeGeometry args={[3.04, 4.44]} />
+            <meshPhysicalMaterial
+              map={charTexture}
+              emissiveMap={charTexture}
+              emissive="#ffffff"
+              emissiveIntensity={1.0}
+              color="#ffffff"
+              roughness={0.4}
+              metalness={0.1}
+              clearcoat={1.0}
+              clearcoatRoughness={0.1}
+              transparent
+            />
           </mesh>
+        )}
+
+        {/* Glowing Emissive Edge Outline (Back Glow) */}
+        <RoundedBox args={[3.26, 4.66, 0.02]} radius={0.09} smoothness={4} position={[0, 0, -0.06]}>
+          <meshStandardMaterial color={glowColor} emissive={glowColor} emissiveIntensity={0.8} />
+        </RoundedBox>
       </group>
     </Float>
   );
 }
 
+
 const GAME_ORDER = ['GOW', 'AC', 'HL', 'RDR', 'HITMAN'];
 
 const CHARACTER_ROSTER = {
   GOW: [
-    { id: '001', name: "KRATOS", role: "Protagonist", lore: "The Ghost of Sparta. A demigod whose rage once tore down Olympus, now seeking a quiet life in the Norse realm, only to be drawn back into the fray by the gods of Asgard.", model: "/models/axe_draco.glb", scale: 5 },
-    { id: '002', name: "ATREUS", role: "Archer / Companion", lore: "Son of Kratos. A young boy discovering his divine heritage and learning what it means to be a god, all while struggling to find his place in a harsh world.", model: "/models/axe_draco.glb", scale: 5 }
+    { id: '001', name: "KRATOS", role: "Protagonist", lore: "Once the Ghost of Sparta, Kratos destroyed the Greek pantheon in a blind rage. Now residing in the harsh Norse realm of Midgard, he wields the Leviathan Axe and struggles to suppress the monster within to be a better father to his son.", image: "/cards/Kratos.png", frameColor: "#001144", glowColor: "#082154", roughness: 0.8, metalness: 0.1 },
+    { id: '002', name: "ATREUS", role: "Archer / Companion", lore: "Son of Kratos and the giantess Laufey. Born with the secret name Loki, Atreus is a skilled archer struggling to understand his divine heritage, control his emerging magical abilities, and forge his own destiny outside his father's shadow.", image: "/cards/Atreus.png", frameColor: "#220044", glowColor: "#4c094c", roughness: 0.8, metalness: 0.1 }
   ],
   AC: [
-    { id: '003', name: "ALTAÏR IBN-LA'AHAD", role: "Master Assassin", lore: "A legendary Syrian Assassin during the Third Crusade. His actions reformed the Brotherhood and laid the foundation for the modern Creed.", model: "/models/hidden_blade_draco.glb", scale: 2 },
-    { id: '004', name: "EZIO AUDITORE", role: "Master Assassin", lore: "A charismatic Florentine noble who became a Master Assassin to exact vengeance on the Templars for the murder of his family.", model: "/models/hidden_blade_draco.glb", scale: 2 },
-    { id: '005', name: "CONNOR KENWAY", role: "Master Assassin", lore: "A Native American Assassin during the American Revolution. He fought for freedom and the survival of his people against Templar manipulation.", model: "/models/hidden_blade_draco.glb", scale: 2 }
+    { id: '003', name: "ALTAÏR IBN-LA'AHAD", role: "Master Assassin", lore: "A legendary Syrian Master Assassin during the Third Crusade. Stripped of his rank for breaking the Creed, Altaïr embarked on a quest for redemption, ultimately seizing the Apple of Eden and reforming the entire Brotherhood with his immense wisdom.", image: "/cards/Altair.png", frameColor: "#ffffff", glowColor: "#ffffff", roughness: 0.5, metalness: 0.5 },
+    { id: '004', name: "EZIO AUDITORE", role: "Master Assassin", lore: "Driven by the tragic execution of his father and brothers, this charismatic Florentine noble evolved from a vengeful youth into a legendary Mentor. He spent his life systematically dismantling the Templar Order across Renaissance Italy and Constantinople.", image: "/cards/Ezio.png", frameColor: "#ffffff", glowColor: "#883030", roughness: 0.5, metalness: 0.5 }
   ],
   HL: [
-    { id: '006', name: "HARRY POTTER", role: "Student", lore: "The Boy Who Lived. (Placeholder for custom character). A student possessing the rare ability to perceive and wield ancient magic.", model: "/models/wand_draco.glb", scale: 2.3, pivot: [-0.5, 0, 0] }
+    { id: '006', name: "ISABELLA", role: "Student", lore: "A remarkably gifted 5th-year student at Hogwarts School of Witchcraft and Wizardry. Possessing the incredibly rare ability to perceive and manipulate ancient magic, she holds the key to stopping a devastating goblin rebellion led by Ranrok.", image: "/cards/Isabella.png", frameColor: "#002200", glowColor: "#006e1d", roughness: 0.2, metalness: 0.9 }
   ],
   RDR: [
-    { id: '007', name: "ARTHUR MORGAN", role: "Outlaw", lore: "A senior gun in the Van der Linde gang. As the era of outlaws comes to an end, Arthur must choose between his own ideals and his loyalty to the gang.", model: "/models/revolver_draco.glb", scale: 29 },
-    { id: '008', name: "JOHN MARSTON", role: "Outlaw", lore: "A core member of the Van der Linde gang. Seeking a better life for his family, he is forced to hunt down his former brothers in arms.", model: "/models/revolver_draco.glb", scale: 29 }
+    { id: '007', name: "ARTHUR MORGAN", role: "Outlaw", lore: "A fiercely loyal senior gun in the Van der Linde gang. As the Wild West dies around him, Arthur wrestles with a crisis of faith in his leader, Dutch, ultimately seeking redemption in his final days through acts of selfless sacrifice.", image: "/cards/Arthur.png", frameColor: "#110000", glowColor: "#693901", roughness: 0.9, metalness: 0.1 },
+    { id: '008', name: "JOHN MARSTON", role: "Outlaw", lore: "A scarred, hardened former outlaw trying to build an honest life for his family at Beecher's Hope. Tragically blackmailed by federal agents, John is forced to hunt down his former brothers-in-arms across the dying American frontier.", image: "/cards/John.png", frameColor: "#440000", glowColor: "#521010", roughness: 0.9, metalness: 0.1 }
   ],
   HITMAN: [
-    { id: '009', name: "AGENT 47", role: "Assassin", lore: "A genetically enhanced clone engineered to be the perfect assassin. Known only by the barcode on the back of his head, he works for the ICA.", model: "/models/pistol_draco.glb", scale: 0.35 }
+    { id: '009', name: "AGENT 47", role: "Assassin", lore: "A genetically perfected clone created by Dr. Ort-Meyer from the DNA of five master criminals. Emotionless, calculating, and armed with a mastery of disguises, 47 executes high-profile targets worldwide for the International Contract Agency.", image: "/cards/Agent47.png", frameColor: "#050505", glowColor: "#222222", roughness: 0.2, metalness: 1.0 }
   ]
 };
+
+const GAME_SYMBOLS = {
+  GOW: "ᚠᚢᚦᚬᚱᚴᚼᚽᚾᚿᛅᛆᛋᛌᛏᛐᛓᛔᛙᛚᛦᛧ",
+  AC: "01",
+  HL: "★⚡✧✦☾🪄",
+  RDR: "♠♦♣♥★✪",
+  HITMAN: "|||0147⌖☠"
+};
+
+function SymbolRain({ activeGameId, color }) {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    let animationFrameId;
+    let particles = [];
+    const maxParticles = 80;
+
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const chars = GAME_SYMBOLS[activeGameId] || GAME_SYMBOLS['GOW'];
+      const charArray = [...chars];
+      particles = [];
+      for (let i = 0; i < maxParticles; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          speed: 0.2 + Math.random() * 0.8,
+          size: 14 + Math.random() * 24,
+          opacity: 0.1 + Math.random() * 0.5,
+          char: charArray[Math.floor(Math.random() * charArray.length)]
+        });
+      }
+    };
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    const draw = () => {
+      animationFrameId = requestAnimationFrame(draw);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const chars = GAME_SYMBOLS[activeGameId] || GAME_SYMBOLS['GOW'];
+      const charArray = [...chars];
+
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+
+        ctx.fillStyle = color;
+        ctx.globalAlpha = p.opacity;
+        ctx.font = `bold ${p.size}px monospace`;
+        ctx.textAlign = 'center';
+
+        ctx.fillText(p.char, p.x, p.y);
+
+        p.y += p.speed;
+
+        if (p.y > canvas.height + p.size) {
+          p.y = -p.size;
+          p.x = Math.random() * canvas.width;
+          p.char = charArray[Math.floor(Math.random() * charArray.length)];
+        }
+      }
+
+      ctx.globalAlpha = 1.0;
+    };
+
+    animationFrameId = requestAnimationFrame(draw);
+
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [activeGameId, color]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        zIndex: 0,
+        pointerEvents: 'none',
+        opacity: 0.6
+      }}
+    />
+  );
+}
 
 export default function CharactersView() {
   const { activeGameId, setActiveGameId } = useStore();
@@ -221,35 +257,7 @@ export default function CharactersView() {
     setActiveCharIndex(newIdx);
   };
 
-  // Touch / Mouse Swipe Logic
-  const [touchStart, setTouchStart] = useState(null);
-  const minSwipeDistance = 50;
-
-  const onPointerDown = (e) => {
-    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-    setTouchStart({ x: clientX, y: clientY });
-  };
-
-  const onPointerUp = (e) => {
-    if (!touchStart) return;
-    const clientX = e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
-    const clientY = e.clientY || (e.changedTouches && e.changedTouches[0].clientY);
-
-    const diffX = touchStart.x - clientX;
-    const diffY = touchStart.y - clientY;
-
-    if (Math.abs(diffX) > Math.abs(diffY)) {
-      // Horizontal Swipe -> Characters
-      if (diffX > minSwipeDistance) switchChar(1);
-      else if (diffX < -minSwipeDistance) switchChar(-1);
-    } else {
-      // Vertical Swipe -> Games
-      if (diffY > minSwipeDistance) switchGame(1);
-      else if (diffY < -minSwipeDistance) switchGame(-1);
-    }
-    setTouchStart(null);
-  };
+  // Removed swipe logic as it conflicts with 3D rotation. Keyboard and buttons are used instead.
 
   // Wheel Scroll for Games
   const onWheel = (e) => {
@@ -283,32 +291,38 @@ export default function CharactersView() {
       }}>
         {/* Scanlines / Grid */}
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(255,255,255,0.015) 4px, rgba(255,255,255,0.015) 8px)', pointerEvents: 'none' }} />
+        <SymbolRain activeGameId={activeGameId} color={color} />
       </div>
 
       {/* LEFT: 3D MODEL VIEWER & CAROUSEL */}
       <div
         style={{ flex: 1, position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center' }}
-        onMouseDown={onPointerDown}
-        onMouseUp={onPointerUp}
-        onTouchStart={onPointerDown}
-        onTouchEnd={onPointerUp}
       >
-        <Suspense fallback={
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: color, letterSpacing: '4px', fontSize: '12px' }}>
-            LOADING BIOMETRICS...
-          </div>
-        }>
-          <Canvas camera={{ position: [0, 1, 8], fov: 45 }} style={{ cursor: 'grab' }}>
-            <ambientLight intensity={0.5} />
-            <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={2} color={color} />
-            <spotLight position={[-10, 10, -10]} angle={0.15} penumbra={1} intensity={1} color="#ffffff" />
+        <Canvas camera={{ position: [0, 1, 8], fov: 45 }} style={{ cursor: 'grab' }}>
+          <ambientLight intensity={0.8} />
+          <spotLight position={[10, 10, 10]} angle={0.2} penumbra={1} intensity={2.5} color={color} />
+          <spotLight position={[-10, 10, -10]} angle={0.2} penumbra={1} intensity={1.5} color="#ffffff" />
+          <pointLight position={[0, 0, 5]} intensity={1.5} color="#ffffff" />
 
-            <CharacterModel url={char.model} scale={char.scale} pivot={char.pivot} key={char.model} animClass={animClass} />
+          <Suspense fallback={
+            <RoundedBox args={[3.2, 4.6, 0.12]} radius={0.08} smoothness={4} position={[0, 0, 0]}>
+              <meshStandardMaterial color="#222" wireframe />
+            </RoundedBox>
+          }>
+            <HologramCard char={char} key={char.image} animClass={animClass} />
+          </Suspense>
 
-            <Environment preset="city" />
-            <ContactShadows position={[0, -2.5, 0]} opacity={0.4} scale={10} blur={2} far={4} />
-          </Canvas>
-        </Suspense>
+          <ContactShadows position={[0, -2.5, 0]} opacity={0.4} scale={10} blur={2} far={4} />
+
+          <OrbitControls
+            enableZoom={false}
+            enablePan={false}
+            minPolarAngle={Math.PI / 2 - 0.4}
+            maxPolarAngle={Math.PI / 2 + 0.4}
+            minAzimuthAngle={-0.8}
+            maxAzimuthAngle={0.8}
+          />
+        </Canvas>
 
         {/* Vertical Game Indicators (Left Side) */}
         <div style={{ position: 'absolute', left: '30px', top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: '15px', zIndex: 10 }}>
@@ -350,7 +364,7 @@ export default function CharactersView() {
 
         {/* Swipe Hint */}
         <div style={{ position: 'absolute', bottom: '40px', left: '50%', transform: 'translateX(-50%)', color: 'rgba(255,255,255,0.3)', fontSize: '10px', letterSpacing: '4px', pointerEvents: 'none', textAlign: 'center' }}>
-          SWIPE ◄ ► FOR CHARACTERS<br />
+          CLICK ◄ ► FOR CHARACTERS<br />
           SCROLL ▲ ▼ FOR GAMES
         </div>
       </div>
@@ -361,7 +375,7 @@ export default function CharactersView() {
         background: 'rgba(10, 15, 25, 0.2)', borderLeft: '1px solid rgba(255,255,255,0.05)',
         backdropFilter: 'blur(25px)', padding: '50px 40px', display: 'flex', flexDirection: 'column'
       }}>
-        
+
         <div key={char.id} className={animClass} style={{ display: 'flex', flexDirection: 'column', flex: 1, animationDuration: '0.6s', animationFillMode: 'both' }}>
           <div style={{ fontSize: '10px', color: color, letterSpacing: '3px', fontWeight: 600, marginBottom: '10px', transition: 'color 0.5s ease' }}>
             SUBJECT PROFILE // {char.id}
