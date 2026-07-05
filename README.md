@@ -118,7 +118,7 @@ flowchart LR
     F -->|Update Emissive Maps| G[3D Character Cards];
     
     C -->|Extract Game Context| H[2D Animation Engine];
-    H -->|Swap Particle Set| I[Dynamic Symbol Rain (Runes, Binary, etc.)];
+    H -->|Swap Particle Set| I["Dynamic Symbol Rain (Runes, Binary, etc.)"];
     
     style A fill:#4CAF50,stroke:#388E3C,stroke-width:2px,color:white;
     style B fill:#2196F3,stroke:#1976D2,stroke-width:2px,color:white;
