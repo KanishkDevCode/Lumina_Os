@@ -500,7 +500,7 @@ export default function App() {
             <span className={`nav-item ${activeNav === 'GAMES' ? 'active' : ''}`} onClick={() => setActiveNav('GAMES')}>{Icons.Games} GAMES</span>
             <span className={`nav-item ${activeNav === 'ASSISTANT' ? 'active' : ''}`} onClick={() => setActiveNav('ASSISTANT')}>{Icons.Assistant} ASSISTANT</span>
             <span className={`nav-item ${activeNav === 'CHARACTERS' ? 'active' : ''}`} onClick={() => setActiveNav('CHARACTERS')}>{Icons.Characters} CHARACTERS</span>
-            <span className={`nav-item ${activeNav === 'ABOUT' ? 'active' : ''}`} onClick={() => setActiveNav('ABOUT')}>{Icons.About} ABOUT DEVELOPER</span>
+            <span className={`nav-item ${activeNav === 'ABOUT' ? 'active' : ''}`} onClick={() => setActiveNav('ABOUT')}>{Icons.About} ABOUT ME</span>
           </div>
           <div className="nav-empty-spacer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
             {isAdmin ? (

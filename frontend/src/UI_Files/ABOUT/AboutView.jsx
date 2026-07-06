@@ -18,7 +18,7 @@ export default function AboutView() {
         {/* LEFT: Branding/Image */}
         <div style={{ 
           width: '40%', 
-          background: 'linear-gradient(135deg, rgba(0, 210, 255, 0.1) 0%, rgba(0,0,0,0.8) 100%)',
+          background: 'linear-gradient(135deg, rgba(0, 210, 255, 0.1) 0%, rgba(42, 157, 143, 0.1) 25%, rgba(214, 40, 40, 0.1) 50%, rgba(139, 147, 156, 0.1) 75%, rgba(0,0,0,0.8) 100%)',
           borderRight: '1px solid rgba(255,255,255,0.05)',
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           padding: '40px', position: 'relative'
@@ -28,18 +28,27 @@ export default function AboutView() {
           
           <div style={{ 
             width: '140px', height: '140px', borderRadius: '50%', 
-            background: 'rgba(0, 210, 255, 0.1)', border: '2px solid #00d2ff',
+            background: 'rgba(0, 210, 255, 0.1)', 
+            padding: '2px', // Space for gradient border
+            backgroundClip: 'padding-box',
+            backgroundImage: 'linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), conic-gradient(#00d2ff, #2a9d8f, #ffffff, #8b939c, #d62828, #00d2ff)',
+            backgroundOrigin: 'border-box',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 30px rgba(0, 210, 255, 0.3)', marginBottom: '30px',
+            boxShadow: '0 0 30px rgba(255, 255, 255, 0.15)', marginBottom: '30px',
             position: 'relative', zIndex: 2
           }}>
-            <div style={{ fontSize: '50px', color: '#00d2ff' }}>{Icons.Characters}</div>
+            <div style={{ fontSize: '50px', background: 'linear-gradient(90deg, #00d2ff, #2a9d8f, #ffffff, #8b939c, #d62828)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              {Icons.Characters}
+            </div>
           </div>
           
           <h2 style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '2px', color: 'white', textAlign: 'center', position: 'relative', zIndex: 2 }}>
             KANISHK
           </h2>
-          <div style={{ fontSize: '10px', letterSpacing: '4px', color: '#00d2ff', marginTop: '10px', position: 'relative', zIndex: 2 }}>
+          <div style={{ 
+            fontSize: '10px', letterSpacing: '4px', marginTop: '10px', position: 'relative', zIndex: 2,
+            background: 'linear-gradient(90deg, #00d2ff, #2a9d8f, #ffffff, #8b939c, #d62828)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 600
+          }}>
             LEAD ARCHITECT
           </div>
         </div>
@@ -48,12 +57,12 @@ export default function AboutView() {
         <div style={{ width: '60%', padding: '50px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-            <div style={{ width: '30px', height: '2px', background: '#00d2ff' }} />
-            <span style={{ fontSize: '11px', letterSpacing: '3px', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>ABOUT THE DEVELOPER</span>
+            <div style={{ width: '30px', height: '3px', background: 'linear-gradient(90deg, #00d2ff, #2a9d8f, #ffffff, #8b939c, #d62828)', borderRadius: '2px' }} />
+            <span style={{ fontSize: '11px', letterSpacing: '3px', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>ABOUT ME</span>
           </div>
 
-          <h1 style={{ fontSize: '32px', fontWeight: 900, letterSpacing: '1px', marginBottom: '25px', lineHeight: 1.2 }}>
-            Engineering the <span style={{ color: '#00d2ff' }}>Future of UI</span>
+          <h1 style={{ fontSize: '32px', fontWeight: 900, letterSpacing: '1px', marginBottom: '25px', lineHeight: 1.2, color: 'white' }}>
+            Engineering the <span style={{ background: 'linear-gradient(90deg, #00d2ff, #2a9d8f, #ffffff, #8b939c, #d62828)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Future of UI</span>
           </h1>
 
           <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', lineHeight: 1.8, marginBottom: '40px' }}>
@@ -79,10 +88,10 @@ export default function AboutView() {
           {/* Social Links */}
           <div style={{ display: 'flex', gap: '20px' }}>
             <button style={{ 
-              background: '#00d2ff', border: 'none', color: '#000', 
+              background: 'linear-gradient(90deg, #00d2ff, #2a9d8f, #ffffff, #8b939c, #d62828)', border: 'none', color: '#000', 
               padding: '12px 30px', borderRadius: '8px', fontSize: '12px', 
-              fontWeight: 700, letterSpacing: '1px', cursor: 'pointer',
-              boxShadow: '0 0 20px rgba(0, 210, 255, 0.4)', transition: '0.3s'
+              fontWeight: 800, letterSpacing: '1px', cursor: 'pointer',
+              boxShadow: '0 0 20px rgba(255, 255, 255, 0.2)', transition: '0.3s'
             }} onMouseOver={e => e.target.style.transform = 'scale(1.05)'} onMouseOut={e => e.target.style.transform = 'scale(1)'}>
               GITHUB PROFILE
             </button>
