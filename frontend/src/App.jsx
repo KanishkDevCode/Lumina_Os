@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, Suspense, lazy, useRef } from 'react'
 import GodOfWarExperience from './Test_Play/GodOfWar/GodOfWarExperience'
-import AssassinsCreedExperience from './Test_Play/AssassinsCreed/AssassinsCreedExperience'
+import AssassinsCreedExperience from './Test_Play/AssassinsCreed/QTE_AC'
 import HogwartsExperience from './Test_Play/HogwartsLegacy/HogwartsExperience'
 import RedDeadExperience from './Test_Play/RedDead/RedDeadExperience'
 import HitmanExperience from './Test_Play/Hitman/HitmanExperience'
