@@ -1,11 +1,36 @@
 import React, { useRef, useState, useEffect } from 'react';
 
-// Define the full multi-event sequence here!
-const qteSequence = [
-  { time: 3.0, key: 'w', prompt: "RUN" },
-  { time: 5.0, key: 'space', prompt: "JUMP" },
-  { time: 7.5, key: 'e', prompt: "ASSASSINATE" }
+// Define the full multi-event sequence here! 
+// You can use seconds (75.0) or minutes ("1:15")
+const rawQteSequence = [
+  { time: 0.0, key: 'Enter', prompt: "START" },
+  { time: "0:35", key: 'space', prompt: "CLIMB UP" },
+  { time: "1:15", key: 'F', prompt: "DISTRACT" },
+  { time: "1:22", key: 'R', prompt: "KILL" },
+  { time: "1:31", key: 'Q', prompt: "DISTRACT GUARDS" },
+  { time: "1:34", key: 'R', prompt: "HANG THE GUARD" },
+  { time: "1:42", key: 'E', prompt: "ASSASSINATE" },
+  { time: "1:48", key: "E", prompt: "ASSASSINATE" },
+  { time: "2:18", key: "R", prompt: "ASSASSINATE" },
+  { time: "2:26", key: "Q", prompt: "THROW SMOKE" },
+  { time: "2:32", key: "R", prompt: "HANG THE GUARD" },
+  { time: "2:43", key: "R", prompt: "STUN THE GUARD" },
+  { time: "2:47", key: "E", prompt: "ASSASSINATE" },
+  { time: "3:14", key: "F", prompt: "DISTRACT" },
+  { time: "3:17", key: "R", prompt: "KILL" },
+  { time: "3:31", key: "Shift", prompt: "SLIDE" },
+  { time: "3:45", key: "Enter", prompt: "TEST PLAY ENDS", isEnd: true }
 ];
+
+const parseTime = (time) => {
+  if (typeof time === 'string' && time.includes(':')) {
+    const [min, sec] = time.split(':').map(Number);
+    return min * 60 + (sec || 0);
+  }
+  return Number(time);
+};
+
+const qteSequence = rawQteSequence.map(qte => ({ ...qte, time: parseTime(qte.time) }));
 
 export default function QTE_AC({ onExit }) {
   const videoSrc = "/Test_Plays/AC_Test_Play.mp4";
@@ -42,7 +67,7 @@ export default function QTE_AC({ onExit }) {
         if (onExit) onExit();
         return;
       }
-      
+
       // Press QTE Key to resolve the action
       const pressedKey = e.key === ' ' ? 'space' : e.key.toLowerCase();
       if (qteState === 'paused' && activeQte && pressedKey === activeQte.key.toLowerCase()) {
@@ -72,12 +97,18 @@ export default function QTE_AC({ onExit }) {
   };
 
   const resolveQTE = () => {
+    // If this is the designated ending event, trigger the end splash screen
+    if (activeQte.isEnd) {
+      handleVideoEnd();
+      return;
+    }
+
     // If there is another QTE in the sequence, increment and keep playing
     if (currentQteIndex < qteSequence.length - 1) {
       setCurrentQteIndex(prev => prev + 1);
     }
     setQteState('playing');
-    
+
     if (videoRef.current) {
       videoRef.current.playbackRate = 1.0;
       videoRef.current.play();
@@ -94,13 +125,13 @@ export default function QTE_AC({ onExit }) {
   // Determine CSS filters based on state
   const isCinematicPause = qteState === 'paused' || qteState === 'slowing';
   const showPrompt = qteState === 'paused' && activeQte;
-  
+
   return (
-    <div style={{ 
-      position: 'fixed', inset: 0, zIndex: 99999, background: 'black', 
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 99999, background: 'black',
       display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden'
     }}>
-      
+
       {/* Video Element */}
       <video
         ref={videoRef}
@@ -174,7 +205,7 @@ export default function QTE_AC({ onExit }) {
       )}
 
       {/* Exit Button */}
-      <button 
+      <button
         onClick={onExit}
         style={{
           position: 'absolute', top: '30px', right: '40px', fontSize: '24px', color: 'white',
